@@ -12,7 +12,3 @@ services:
         value: Admin999
       - key: ADMIN_PASSWORD
         value: "123"
-    disk:
-      name: data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
