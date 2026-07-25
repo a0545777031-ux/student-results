@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}تحليل نتائج الطلاب{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e5a4d'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='%23b6892b'>📊</text></svg>">
+</head>
+<body dir="rtl">
+{% block header %}
+<div class="topstrip"></div>
+<header class="top"><div class="container bar">
+  <a class="brand" href="/">
+    <span class="logo">📊</span>
+    <span><span data-content="site_title">تحليل نتائج الطلاب</span>
+      <small data-i18n="site_tag">منصة سحابية رسمية</small></span>
+  </a>
+  <nav class="mainnav">
+    <a href="/" data-i18n="nav_home"></a>
+    <span id="navAuth"></span>
+    <button class="langtog" id="langToggle">EN</button>
+  </nav>
+</div></header>
+{% endblock %}
+
+{% block body %}{% endblock %}
+
+{% block footer %}
+<footer class="foot"><div class="container">
+  <span data-content="footer">جميع الحقوق محفوظة © منصة تحليل نتائج الطلاب</span>
+</div></footer>
+{% endblock %}
+
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/common.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

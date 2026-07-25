@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}لوحتي - تحليل نتائج الطلاب{% endblock %}
+{% block footer %}{% endblock %}
+{% block body %}
+<div class="dash">
+  <aside class="side">
+    <div class="who">
+      <b id="uName">—</b><span id="uEmail"></span>
+    </div>
+    <button class="navi active" data-sec="upload"><span>📥</span><span data-i18n="dash_upload"></span></button>
+    <button class="navi" data-sec="analysis"><span>📊</span><span data-i18n="dash_analysis"></span></button>
+    <button class="navi" data-sec="files"><span>🗂️</span><span data-i18n="dash_files"></span></button>
+    <a href="#" id="logoutSide"><span>🚪</span><span data-i18n="logout"></span></a>
+  </aside>
+  <main class="main">
+    <!-- UPLOAD -->
+    <section id="sec-upload">
+      <div class="page-head"><h1 data-i18n="upload_title"></h1></div>
+      <div class="msg" id="upMsg"></div>
+      <div class="drop" id="drop">
+        <div class="ic">☁️⬆️</div>
+        <p data-i18n="upload_hint"></p>
+        <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.csv" class="hidden">
+        <button class="btn ghost" id="pickBtn" type="button">＋</button>
+      </div>
+      <div class="filelist" id="fileList"></div>
+      <div style="margin-top:16px"><button class="btn" id="uploadBtn" disabled>
+        <span data-i18n="upload_btn"></span></button></div>
+    </section>
+
+    <!-- ANALYSIS -->
+    <section id="sec-analysis" class="hidden">
+      <div class="page-head">
+        <h1 data-i18n="analysis_title"></h1>
+        <div class="toolbar">
+          <select id="sourceSel"></select>
+          <button class="btn sm gold" id="dlExcel">⬇️ <span data-i18n="dl_excel"></span></button>
+          <button class="btn sm" id="dlPdf">📄 <span data-i18n="dl_pdf"></span></button>
+        </div>
+      </div>
+      <div id="noData" class="card" style="text-align:center;color:var(--muted)"><span data-i18n="no_data"></span></div>
+      <div id="analysisBody" class="hidden">
+        <div class="kpi" id="kpi"></div>
+        <div class="card" style="margin-bottom:20px">
+          <label style="margin-top:0" data-i18n="select_fields"></label>
+          <div class="fields" id="fieldChips"></div>
+          <div class="toolbar">
+            <label style="margin:0"><span data-i18n="term"></span>:</label>
+            <select id="termSel">
+              <option value="t1" data-i18n="term1"></option>
+              <option value="t2" data-i18n="term2"></option>
+            </select>
+            <label style="margin:0"><span data-i18n="subject"></span>:</label>
+            <select id="subjSel"></select>
+          </div>
+        </div>
+        <div class="charts">
+          <div class="chartcard"><h3 data-i18n="chart_subject_avg"></h3><canvas id="chSubjAvg"></canvas></div>
+          <div class="chartcard"><h3 data-i18n="chart_dist"></h3><canvas id="chDist"></canvas></div>
+          <div class="chartcard full"><h3 data-i18n="chart_top"></h3><canvas id="chTop"></canvas></div>
+          <div class="chartcard"><h3 data-i18n="chart_student"></h3>
+            <select id="studentSel" style="margin-bottom:10px"></select>
+            <canvas id="chStudent"></canvas></div>
+          <div class="chartcard"><h3 data-i18n="chart_compare"></h3><canvas id="chCompare"></canvas></div>
+        </div>
+        <div style="margin-top:24px">
+          <div class="tablewrap"><table class="data" id="dataTable"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILES -->
+    <section id="sec-files" class="hidden">
+      <div class="page-head"><h1 data-i18n="dash_files"></h1></div>
+      <div class="tablewrap"><table class="data" id="filesTable"></table></div>
+    </section>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/minichart.js"></script>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

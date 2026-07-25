@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}تسجيل الدخول - تحليل نتائج الطلاب{% endblock %}
+{% block body %}
+<div class="auth-wrap"><div class="auth-card">
+  <h2 data-i18n="login_title"></h2>
+  <p class="sub" data-i18n="login_sub"></p>
+  <div class="msg" id="msg"></div>
+  <form id="loginForm">
+    <label data-i18n="identifier"></label>
+    <input id="identifier" required autocomplete="username" data-i18n-ph="identifier">
+    <label data-i18n="password"></label>
+    <input id="password" type="password" required autocomplete="current-password">
+    <button class="btn block" style="margin-top:20px" type="submit" id="submitBtn">
+      <span data-i18n="enter"></span></button>
+  </form>
+  <div class="center-link">
+    <span data-i18n="no_account"></span> <a href="/register" data-i18n="create_one"></a>
+  </div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+wireHeader();
+el("loginForm").onsubmit = async(e)=>{
+  e.preventDefault(); hideMsg("msg");
+  const btn=el("submitBtn"); btn.disabled=true;
+  const r = await api("/api/login",{method:"POST",body:{
+    identifier:el("identifier").value.trim(), password:el("password").value}});
+  btn.disabled=false;
+  if(r.ok){ location.href = r.data.role==="admin" ? "/admin" : "/dashboard"; return; }
+  const map={pending:"pending_msg",suspended:"suspended_msg",rejected:"suspended_msg",bad_credentials:"bad_cred"};
+  showMsg("msg", t(map[r.data && r.data.error] || "bad_cred"), "err");
+};
+</script>
+{% endblock %}

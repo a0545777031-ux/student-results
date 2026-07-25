@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}تسجيل جديد - تحليل نتائج الطلاب{% endblock %}
+{% block body %}
+<div class="auth-wrap"><div class="auth-card">
+  <h2 data-i18n="reg_title"></h2>
+  <p class="sub" data-i18n="reg_sub"></p>
+  <div class="msg" id="msg"></div>
+  <form id="regForm">
+    <label data-i18n="name_label"></label>
+    <input id="name" required data-i18n-ph="name_hint">
+    <label data-i18n="email"></label>
+    <input id="email" type="email" required autocomplete="email">
+    <label data-i18n="password"></label>
+    <input id="password" type="password" required autocomplete="new-password">
+    <label data-i18n="confirm_password"></label>
+    <input id="password2" type="password" required autocomplete="new-password">
+    <button class="btn block gold" style="margin-top:20px" type="submit" id="submitBtn">
+      <span data-i18n="register_btn"></span></button>
+  </form>
+  <div class="center-link">
+    <span data-i18n="have_account"></span> <a href="/login" data-i18n="nav_login"></a>
+  </div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+wireHeader();
+el("regForm").onsubmit = async(e)=>{
+  e.preventDefault(); hideMsg("msg");
+  if(el("password").value !== el("password2").value){
+    showMsg("msg", LANG==="ar"?"كلمتا المرور غير متطابقتين":"Passwords do not match","err"); return;
+  }
+  const btn=el("submitBtn"); btn.disabled=true;
+  const r = await api("/api/register",{method:"POST",body:{
+    name:el("name").value.trim(), email:el("email").value.trim(), password:el("password").value}});
+  btn.disabled=false;
+  if(r.ok){ showMsg("msg", t("reg_success"), "ok"); el("regForm").reset(); return; }
+  const map={email_exists:LANG==="ar"?"البريد مسجّل مسبقاً":"Email already registered",
+    invalid_email:LANG==="ar"?"بريد غير صالح":"Invalid email",
+    weak_password:LANG==="ar"?"كلمة المرور قصيرة":"Password too short",
+    missing_fields:LANG==="ar"?"أكمل جميع الحقول":"Fill all fields"};
+  showMsg("msg", map[r.data && r.data.error] || "خطأ", "err");
+};
+</script>
+{% endblock %}

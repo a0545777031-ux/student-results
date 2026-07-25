@@ -1,0 +1,128 @@
+// Bilingual dictionary (Arabic default). Toggle updates <html> dir/lang.
+const I18N = {
+  ar:{
+    nav_home:"الرئيسية", nav_login:"تسجيل الدخول", nav_register:"تسجيل جديد",
+    nav_dashboard:"لوحتي", nav_admin:"لوحة التحكم", nav_logout:"خروج",
+    site_name:"تحليل نتائج الطلاب", site_tag:"منصة سحابية رسمية",
+    get_started:"ابدأ الآن", learn_more:"تعرّف أكثر",
+    features_title:"مزايا المنصة", features_sub:"كل ما تحتاجه لتحليل نتائج طلابك باحترافية",
+    f1_t:"رفع دفعة واحدة", f1_d:"ارفع مجموعة ملفات PDF أو Excel دفعة واحدة وتُقرأ تلقائياً",
+    f2_t:"استخراج دقيق", f2_d:"استخراج نتائج كل طالب على حدة في جميع المواد والحقول",
+    f3_t:"رسوم بيانية جذابة", f3_d:"مخططات ومقارنات إبداعية لكل حقل من حقول الدرجات",
+    f4_t:"تحميل بصيغ متعددة", f4_d:"حمّل النتائج بصيغة Excel وPDF باسم فصلك",
+    f5_t:"سحابي بالكامل", f5_d:"تصفّح من أي جهاز وأي مكان — ليس المتصفح فقط",
+    f6_t:"لوحة تحكم للمدير", f6_d:"إدارة المستخدمين واعتماد التسجيل والتحكم الكامل",
+    about_title:"عن المنصة",
+    login_title:"تسجيل الدخول", login_sub:"أدخل بياناتك للدخول إلى حسابك",
+    identifier:"اسم المستخدم أو البريد", password:"كلمة المرور", enter:"دخول",
+    no_account:"ليس لديك حساب؟", create_one:"أنشئ حساباً",
+    reg_title:"تسجيل مستخدم جديد", reg_sub:"سيبقى حسابك معلّقاً حتى يعتمده المدير",
+    name_label:"اسم الفصل / الاسم المعروض", name_hint:"مثال: أول متوسط أ",
+    email:"البريد الإلكتروني", confirm_password:"تأكيد كلمة المرور",
+    register_btn:"إنشاء الحساب", have_account:"لديك حساب؟",
+    reg_success:"تم إرسال طلبك بنجاح! حسابك معلّق بانتظار اعتماد المدير.",
+    pending_msg:"حسابك قيد المراجعة ولم يُعتمد بعد.",
+    suspended_msg:"تم إيقاف اشتراكك. تواصل مع الإدارة.",
+    bad_cred:"بيانات الدخول غير صحيحة.",
+    // dashboard
+    dash_upload:"رفع الملفات", dash_analysis:"التحليل والرسوم", dash_files:"ملفاتي",
+    dash_downloads:"التحميلات",
+    upload_title:"رفع نتائج الطلاب", upload_hint:"اسحب الملفات هنا أو اضغط للاختيار (PDF / Excel)",
+    upload_btn:"رفع وتحليل", uploading:"جارٍ الرفع والتحليل...",
+    students:"الطلاب", subjects:"المواد", files:"الملفات", avg:"المتوسط العام",
+    select_fields:"اختر الحقول المراد تحليلها:",
+    term:"الفصل", subject:"المادة", component:"الحقل", all_subjects:"كل المواد",
+    term1:"الفصل الأول", term2:"الفصل الثاني",
+    analysis_title:"تحليل النتائج", pick_source:"مصدر البيانات:", all_files:"كل الملفات",
+    dl_excel:"تحميل Excel", dl_pdf:"تحميل PDF", dl_original:"الملف الأصلي",
+    no_data:"لا توجد بيانات بعد. ارفع ملفاً من قسم رفع الملفات.",
+    chart_subject_avg:"متوسط الدرجات لكل مادة", chart_top:"أعلى الطلاب (المجموع)",
+    chart_dist:"توزيع الطلاب حسب المستوى", chart_compare:"مقارنة الطلاب عبر المواد",
+    chart_student:"نتائج طالب مختار", pick_student:"اختر طالباً",
+    excellent:"ممتاز", vgood:"جيد جداً", good:"جيد", pass:"مقبول", weak:"ضعيف",
+    delete:"حذف", confirm_delete:"تأكيد الحذف؟", rows:"صف",
+    // admin
+    admin_users:"المستخدمون", admin_content:"محتوى الموقع", admin_pending:"طلبات معلّقة",
+    name:"الاسم", status:"الحالة", created:"التسجيل", actions:"إجراءات", reports:"التقارير",
+    approve:"اعتماد", suspend:"إيقاف", activate:"تفعيل", reject:"رفض",
+    change_pw:"كلمة المرور", view_reports:"التقارير", delete_user:"حذف",
+    pending:"معلّق", active:"مفعّل", suspended:"موقوف", rejected:"مرفوض",
+    new_password:"كلمة المرور الجديدة", save:"حفظ", cancel:"إلغاء",
+    content_hint:"عدّل نصوص واجهة الموقع (عربي/إنجليزي) ثم احفظ.",
+    save_content:"حفظ المحتوى", saved:"تم الحفظ بنجاح",
+    user_reports:"تقارير المستخدم", uploads_count:"عدد الملفات",
+    field_short_tests:"اختبارات قصيرة", field_assessment:"أدوات تقييم",
+    field_final_exam:"نهاية الفصل", field_total:"المجموع",
+    logout:"تسجيل الخروج", welcome:"مرحباً"
+  },
+  en:{
+    nav_home:"Home", nav_login:"Login", nav_register:"Sign Up",
+    nav_dashboard:"My Panel", nav_admin:"Admin", nav_logout:"Logout",
+    site_name:"Student Results Analysis", site_tag:"Official cloud platform",
+    get_started:"Get Started", learn_more:"Learn more",
+    features_title:"Platform Features", features_sub:"Everything you need to analyze student results",
+    f1_t:"Bulk Upload", f1_d:"Upload many PDF/Excel files at once, parsed automatically",
+    f2_t:"Accurate Extraction", f2_d:"Extract each student's results across all subjects & fields",
+    f3_t:"Rich Charts", f3_d:"Creative charts & comparisons for every grade field",
+    f4_t:"Multi-format Export", f4_d:"Download results as Excel & PDF named after your class",
+    f5_t:"Fully Cloud", f5_d:"Browse from any device, anywhere — not just this browser",
+    f6_t:"Admin Dashboard", f6_d:"Manage users, approve registrations, full control",
+    about_title:"About the Platform",
+    login_title:"Login", login_sub:"Enter your credentials to sign in",
+    identifier:"Username or Email", password:"Password", enter:"Sign in",
+    no_account:"No account?", create_one:"Create one",
+    reg_title:"New Registration", reg_sub:"Your account stays pending until the admin approves it",
+    name_label:"Class / Display name", name_hint:"e.g. Grade 7 - A",
+    email:"Email", confirm_password:"Confirm password",
+    register_btn:"Create account", have_account:"Have an account?",
+    reg_success:"Request sent! Your account is pending admin approval.",
+    pending_msg:"Your account is under review and not yet approved.",
+    suspended_msg:"Your subscription is suspended. Contact the admin.",
+    bad_cred:"Invalid credentials.",
+    dash_upload:"Upload", dash_analysis:"Analysis & Charts", dash_files:"My Files",
+    dash_downloads:"Downloads",
+    upload_title:"Upload student results", upload_hint:"Drag files here or click to choose (PDF / Excel)",
+    upload_btn:"Upload & Analyze", uploading:"Uploading & parsing...",
+    students:"Students", subjects:"Subjects", files:"Files", avg:"Overall Average",
+    select_fields:"Select fields to analyze:",
+    term:"Term", subject:"Subject", component:"Field", all_subjects:"All subjects",
+    term1:"Term 1", term2:"Term 2",
+    analysis_title:"Results Analysis", pick_source:"Data source:", all_files:"All files",
+    dl_excel:"Download Excel", dl_pdf:"Download PDF", dl_original:"Original file",
+    no_data:"No data yet. Upload a file from the Upload section.",
+    chart_subject_avg:"Average grade per subject", chart_top:"Top students (total)",
+    chart_dist:"Students by performance level", chart_compare:"Students across subjects",
+    chart_student:"Selected student results", pick_student:"Choose a student",
+    excellent:"Excellent", vgood:"Very good", good:"Good", pass:"Pass", weak:"Weak",
+    delete:"Delete", confirm_delete:"Confirm delete?", rows:"rows",
+    admin_users:"Users", admin_content:"Site Content", admin_pending:"Pending",
+    name:"Name", status:"Status", created:"Registered", actions:"Actions", reports:"Reports",
+    approve:"Approve", suspend:"Suspend", activate:"Activate", reject:"Reject",
+    change_pw:"Password", view_reports:"Reports", delete_user:"Delete",
+    pending:"Pending", active:"Active", suspended:"Suspended", rejected:"Rejected",
+    new_password:"New password", save:"Save", cancel:"Cancel",
+    content_hint:"Edit the site interface texts (AR/EN) then save.",
+    save_content:"Save content", saved:"Saved successfully",
+    user_reports:"User reports", uploads_count:"Files",
+    field_short_tests:"Short tests", field_assessment:"Assessment tools",
+    field_final_exam:"Final exam", field_total:"Total",
+    logout:"Logout", welcome:"Welcome"
+  }
+};
+let LANG = localStorage.getItem("lang") || "ar";
+function t(k){ return (I18N[LANG] && I18N[LANG][k]) || (I18N.ar[k]) || k; }
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.body.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    el.textContent = t(el.getAttribute("data-i18n"));
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{
+    el.placeholder = t(el.getAttribute("data-i18n-ph"));
+  });
+  const tg = document.getElementById("langToggle");
+  if(tg) tg.textContent = LANG === "ar" ? "EN" : "عربي";
+  document.dispatchEvent(new CustomEvent("langchange"));
+}
+function toggleLang(){ LANG = LANG === "ar" ? "en" : "ar"; localStorage.setItem("lang", LANG); applyI18n(); }

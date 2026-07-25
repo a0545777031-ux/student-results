@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="hero">
+  <div class="pattern"></div>
+  <div class="container">
+    <h1 data-content="hero_title">منصة تحليل نتائج الطلاب</h1>
+    <p data-content="hero_subtitle">رفع وتحليل نتائج الطلاب بذكاء ودقة، مع رسوم بيانية ومقارنات احترافية</p>
+    <div class="cta">
+      <a class="btn gold" href="/register" data-i18n="get_started"></a>
+      <a class="btn ghost" href="/login" style="color:#fff;border-color:#ffffff88" data-i18n="nav_login"></a>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="announce" id="announceBox" style="display:none">⚠️ <span></span></div>
+</div>
+
+<section>
+  <div class="container">
+    <h2 class="section-title" data-i18n="features_title"></h2>
+    <p class="section-sub" data-i18n="features_sub"></p>
+    <div class="grid c3">
+      <div class="card feature"><div class="ic">📥</div><h3 data-i18n="f1_t"></h3><p data-i18n="f1_d"></p></div>
+      <div class="card feature"><div class="ic">🎯</div><h3 data-i18n="f2_t"></h3><p data-i18n="f2_d"></p></div>
+      <div class="card feature"><div class="ic">📈</div><h3 data-i18n="f3_t"></h3><p data-i18n="f3_d"></p></div>
+      <div class="card feature"><div class="ic">⬇️</div><h3 data-i18n="f4_t"></h3><p data-i18n="f4_d"></p></div>
+      <div class="card feature"><div class="ic">☁️</div><h3 data-i18n="f5_t"></h3><p data-i18n="f5_d"></p></div>
+      <div class="card feature"><div class="ic">🛡️</div><h3 data-i18n="f6_t"></h3><p data-i18n="f6_d"></p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;border-top:1px solid var(--line)">
+  <div class="container" style="max-width:820px;text-align:center">
+    <h2 class="section-title" data-i18n="about_title"></h2>
+    <p class="section-sub" data-content="about" style="font-size:17px;line-height:1.9"></p>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>loadSiteContent(); wireHeader();</script>
+{% endblock %}

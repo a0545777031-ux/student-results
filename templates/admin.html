@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم - تحليل نتائج الطلاب{% endblock %}
+{% block footer %}{% endblock %}
+{% block body %}
+<div class="dash">
+  <aside class="side">
+    <div class="who"><b data-i18n="nav_admin"></b><span id="adminName"></span></div>
+    <button class="navi active" data-sec="users"><span>👥</span><span data-i18n="admin_users"></span></button>
+    <button class="navi" data-sec="content"><span>📝</span><span data-i18n="admin_content"></span></button>
+    <a href="#" id="logoutSide"><span>🚪</span><span data-i18n="logout"></span></a>
+  </aside>
+  <main class="main">
+    <section id="sec-users">
+      <div class="page-head"><h1 data-i18n="admin_users"></h1>
+        <div class="kpi" style="margin:0;grid-template-columns:repeat(3,auto);gap:10px">
+          <div class="card" style="padding:10px 16px"><span class="badge pending" id="cntPending">0</span>
+            <span data-i18n="admin_pending"></span></div>
+          <div class="card" style="padding:10px 16px"><span class="badge active" id="cntActive">0</span>
+            <span data-i18n="active"></span></div>
+        </div>
+      </div>
+      <div class="msg" id="uMsg"></div>
+      <div class="tablewrap"><table class="data" id="usersTable"></table></div>
+    </section>
+
+    <section id="sec-content" class="hidden">
+      <div class="page-head"><h1 data-i18n="admin_content"></h1></div>
+      <p style="color:var(--muted)" data-i18n="content_hint"></p>
+      <div class="msg" id="cMsg"></div>
+      <div id="contentForm"></div>
+      <button class="btn gold" id="saveContent" style="margin-top:16px"><span data-i18n="save_content"></span></button>
+    </section>
+  </main>
+</div>
+
+<!-- password modal -->
+<div class="modal-bg" id="pwModal"><div class="modal">
+  <h3 data-i18n="change_pw"></h3>
+  <input type="text" id="pwInput" data-i18n-ph="new_password">
+  <div class="row" style="margin-top:16px">
+    <button class="btn" id="pwSave" data-i18n="save"></button>
+    <button class="btn ghost" id="pwCancel" data-i18n="cancel"></button>
+  </div>
+</div></div>
+
+<!-- reports modal -->
+<div class="modal-bg" id="repModal"><div class="modal" style="max-width:640px">
+  <h3 data-i18n="user_reports"></h3>
+  <div class="tablewrap"><table class="data" id="repTable"></table></div>
+  <div style="margin-top:16px;text-align:end"><button class="btn ghost" id="repClose" data-i18n="cancel"></button></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/admin.js"></script>
+{% endblock %}
