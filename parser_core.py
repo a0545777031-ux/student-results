@@ -2,40 +2,53 @@
 """
 قارئ نتائج الطلاب من ملفات PDF (نموذج دفتر رصد الدرجات) و Excel
 Student results parser for the Saudi "grade record" PDF layout and Excel files.
-Recovers CID-encoded Arabic via the embedded font glyph map, reconstructs
-logical (RTL) order, and extracts per-student, per-subject, per-component grades.
 """
 import re, io, json, unicodedata
 import pdfplumber
-import pikepdf
+from pypdf import PdfReader
 from fontTools.ttLib import TTFont
 
 AR_RANGE = r'؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿'
 
 # ---------- CID / glyph recovery ----------
 def build_gid_map(path):
-    pdf = pikepdf.open(path)
+    """Extract embedded CID fonts (pure-python via pypdf) and build a
+    glyph-id -> unicode map from each font's cmap table."""
+    reader = PdfReader(path)
     gid2uni = {}
     done = set()
-    for page in pdf.pages:
-        fd = page.get("/Resources", {}).get("/Font", {})
-        for _, f in fd.items():
-            if "/DescendantFonts" not in f:
+    for page in reader.pages:
+        res = page.get("/Resources")
+        if res is None:
+            continue
+        res = res.get_object()
+        fonts = res.get("/Font")
+        if fonts is None:
+            continue
+        fonts = fonts.get_object()
+        for name in list(fonts.keys()):
+            f = fonts[name].get_object()
+            desc = f.get("/DescendantFonts")
+            if not desc:
                 continue
             base = str(f.get("/BaseFont"))
             if base in done:
                 continue
-            df = f["/DescendantFonts"][0]
-            fdsc = df.get("/FontDescriptor", {})
+            df = desc.get_object()[0].get_object()
+            fdsc = df.get("/FontDescriptor")
+            if not fdsc:
+                continue
+            fdsc = fdsc.get_object()
             ff = None
             for key in ("/FontFile2", "/FontFile3", "/FontFile"):
                 if key in fdsc:
-                    ff = fdsc[key]; break
+                    ff = fdsc[key].get_object(); break
             if ff is None:
                 continue
             done.add(base)
             try:
-                tt = TTFont(io.BytesIO(ff.read_bytes()))
+                data = ff.get_data()
+                tt = TTFont(io.BytesIO(data))
                 cmap = tt.getBestCmap()
                 order = tt.getGlyphOrder()
                 name2gid = {n: i for i, n in enumerate(order)}
@@ -49,11 +62,9 @@ def build_gid_map(path):
 
 # ---------- direction / normalization ----------
 def _reverse_logical(text):
-    """Reverse visual-order runs into logical order, keeping numbers/latin runs intact."""
     lines = text.split("\n")
     out_lines = []
     for line in lines:
-        # split into runs: arabic vs (digits/latin/punct)
         runs = re.findall(r'[%s]+|[^%s]+' % (AR_RANGE, AR_RANGE), line)
         runs = list(reversed(runs))
         rebuilt = []
@@ -69,15 +80,13 @@ def decode_cell(t, gid2uni):
     if not t:
         return ""
     t = re.sub(r'\(cid:(\d+)\)', lambda m: gid2uni.get(m.group(1), ""), t)
-    # Reverse presentation-form glyphs into logical order FIRST (keeps lam-alef
-    # ligatures as single units), THEN normalize to base Arabic letters.
     t = _reverse_logical(t)
     t = unicodedata.normalize('NFKC', t)
     return re.sub(r'[ \t]+', ' ', t).strip()
 
 def clean_name(raw):
     s = raw.replace("\n", " ")
-    s = re.sub(r'.*?(?:الاسم|الأسم)\s*[:：]?\s*', '', s)  # drop label prefix
+    s = re.sub(r'.*?(?:الاسم|الأسم)\s*[:：]?\s*', '', s)
     s = re.sub(r'رقم\s*الهوية.*', '', s)
     s = re.sub(r'\d+', '', s)
     s = re.sub(r'[:：]', ' ', s)
@@ -109,7 +118,6 @@ def parse_pdf(path):
     pl = pdfplumber.open(path)
 
     meta = {"school": "", "grade_class": "", "year": "", "title": ""}
-    # meta from page 1 text
     try:
         t0 = decode_cell(pl.pages[0].extract_text() or "", gid2uni)
         for ln in t0.split("\n"):
@@ -126,7 +134,7 @@ def parse_pdf(path):
         pass
 
     subjects = []
-    students = []  # list of dict(name,id,seq, grades={subject:{compkey:{term:val}}})
+    students = []
     cur = None
 
     for pg in pl.pages:
@@ -134,12 +142,9 @@ def parse_pdf(path):
             if not tb:
                 continue
             dec = [[decode_cell(c, gid2uni) for c in row] for row in tb]
-            ncols = max(len(r) for r in dec)
-            # find header row with subjects
             for row in dec:
                 joined = " ".join(row)
                 if sum(h in joined for h in KNOWN_SUBJECT_HINTS) >= 4:
-                    # subject columns: cells that are non-empty and arabic, excluding last two id/label cols
                     hdr = row
                     cand = []
                     for ci, c in enumerate(hdr):
@@ -147,21 +152,17 @@ def parse_pdf(path):
                         if cc and re.search(r'[%s]' % AR_RANGE, cc):
                             cand.append((ci, cc))
                     if cand and not subjects:
-                        subjects = cand  # list of (colindex, name)
+                        subjects = cand
                     break
-            # data rows
             for row in dec:
                 last = row[-1] if row else ""
-                # student header cell contains الاسم / رقم الهوية
                 if "الاسم" in last or "الهوية" in last or "رقم الهو" in last:
-                    # new student
                     mid = re.search(r'(\d{6,})', last)
                     sid = mid.group(1) if mid else ""
                     name = clean_name(last)
                     cur = {"name": name or f"طالب {len(students)+1}", "id": sid,
                            "seq": len(students)+1, "grades": {}}
                     students.append(cur)
-                # component/label column is second-from-last typically
                 label = row[-2] if len(row) >= 2 else ""
                 key, term, ar = classify_component(label)
                 if key and cur and subjects:
@@ -171,8 +172,6 @@ def parse_pdf(path):
                             m = re.search(r'-?\d+(?:\.\d+)?', val)
                             if m:
                                 v = float(m.group(0))
-                                # guard against concatenated/garbled cells: grade fields
-                                # never exceed a few hundred. Skip implausible outliers.
                                 if -1 <= v <= 500:
                                     cur["grades"].setdefault(sname, {}).setdefault(key, {})[term] = v
     subj_names = [s[1] for s in subjects]
@@ -198,14 +197,3 @@ def _present_components(students):
                 out.append({"key":k,"component":ck,"term":term,
                     "label":f"{labels[ck]} - {'الفصل الأول' if term=='t1' else 'الفصل الثاني'}"})
     return out
-
-if __name__ == "__main__":
-    import sys
-    data = parse_pdf(sys.argv[1] if len(sys.argv)>1 else "data/sample.pdf")
-    print("META:", json.dumps(data["meta"], ensure_ascii=False))
-    print("SUBJECTS:", json.dumps(data["subjects"], ensure_ascii=False))
-    print("COMPONENTS:", json.dumps(data["components"], ensure_ascii=False))
-    print("N students:", len(data["students"]))
-    for st in data["students"][:3]:
-        print("\nNAME:", st["name"], "| ID:", st["id"])
-        print(json.dumps(st["grades"], ensure_ascii=False)[:600])
