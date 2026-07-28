@@ -30,8 +30,6 @@ function switchSec(sec){
   if(sec==="analysis") loadData();
   if(sec==="files") refreshFiles();
 }
-
-/* ---------- upload ---------- */
 function setupUpload(){
   const drop=el("drop"), input=el("fileInput");
   el("pickBtn").onclick=()=>input.click();
@@ -43,10 +41,7 @@ function setupUpload(){
   el("uploadBtn").onclick=doUpload;
 }
 let PENDING=[];
-function addFiles(list){
-  for(const f of list) PENDING.push(f);
-  renderPending();
-}
+function addFiles(list){ for(const f of list) PENDING.push(f); renderPending(); }
 function renderPending(){
   const wrap=el("fileList"); wrap.innerHTML="";
   PENDING.forEach((f,i)=>{
@@ -77,19 +72,13 @@ async function doUpload(){
     PENDING=[]; el("uploadBtn").disabled=true;
     showMsg("upMsg", LANG==="ar"?"تمت المعالجة. انتقل إلى التحليل والرسوم.":"Done. Go to Analysis.","ok");
     await refreshFiles();
-  } else {
-    showMsg("upMsg", LANG==="ar"?"فشل الرفع":"Upload failed","err");
-  }
+  } else { showMsg("upMsg", LANG==="ar"?"فشل الرفع":"Upload failed","err"); }
   el("uploadBtn").disabled = PENDING.length===0;
 }
-
-/* ---------- files ---------- */
 async function refreshFiles(){
   const r=await api("/api/my/uploads"); FILES=r.data||[];
-  // source selector
   const sel=el("sourceSel"); sel.innerHTML=`<option value="">${t("all_files")}</option>`+
     FILES.map(f=>`<option value="${f.id}">${f.orig_name} (${f.n_students})</option>`).join("");
-  // files table
   const tb=el("filesTable");
   tb.innerHTML=`<tr><th>#</th><th>${t("files")}</th><th>${t("students")}</th><th>${t("created")}</th><th>${t("actions")}</th></tr>`+
     (FILES.length?FILES.map((f,i)=>`<tr>
@@ -104,8 +93,6 @@ async function delFile(id){
   await api("/api/my/uploads/"+id,{method:"DELETE"});
   await refreshFiles(); if(DATA) loadData();
 }
-
-/* ---------- analysis ---------- */
 async function loadData(){
   const src=el("sourceSel").value;
   const r=await api("/api/my/data"+(src?("?upload_id="+src):""));
@@ -114,13 +101,10 @@ async function loadData(){
   el("noData").classList.toggle("hidden", !!has);
   el("analysisBody").classList.toggle("hidden", !has);
   if(!has) return;
-  // subject selector
   const ss=el("subjSel"); ss.innerHTML=`<option value="">${t("all_subjects")}</option>`+
     DATA.subjects.map(s=>`<option value="${s}">${s}</option>`).join("");
-  // default selected fields = totals present
   SELECTED = new Set((DATA.components||[]).filter(c=>c.component==="total").map(c=>c.key));
   if(!SELECTED.size && DATA.components && DATA.components.length) SELECTED.add(DATA.components[0].key);
-  // student selector
   const stu=el("studentSel");
   stu.innerHTML=DATA.students.map((s,i)=>`<option value="${i}">${s.name}</option>`).join("");
   buildFieldChips();
@@ -147,116 +131,22 @@ function getVal(st, subj, compKey, term){
   const v = c[compKey] && c[compKey][term];
   return (typeof v==="number")? v : null;
 }
-function selectedComps(term){ // components chosen for this term
-  return [...SELECTED].map(k=>k.split(":")).filter(([c,tm])=>tm===term).map(([c])=>c);
-}
-function primaryComp(term){
-  const cs=selectedComps(term); if(cs.includes("total")) return "total"; return cs[0]||"total";
-}
+function selectedComps(term){ return [...SELECTED].map(k=>k.split(":")).filter(([c,tm])=>tm===term).map(([c])=>c); }
+function primaryComp(term){ const cs=selectedComps(term); if(cs.includes("total")) return "total"; return cs[0]||"total"; }
 function render(){
   if(!DATA) return;
   const term=el("termSel").value;
-  drawKPI(term);
-  drawSubjectAvg(term);
-  drawDistribution(term);
-  drawTop(term);
-  drawStudent();
-  drawCompare(term);
-  drawTable(term);
+  drawKPI(term); drawSubjectAvg(term); drawDistribution(term);
+  drawTop(term); drawStudent(); drawCompare(term); drawTable(term);
 }
 function destroy(id){ if(CHARTS[id]){CHARTS[id].destroy(); delete CHARTS[id];} }
 function mk(id,cfg){ destroy(id); const c=el(id); if(!c) return; CHARTS[id]=new Chart(c,cfg); }
-
 function drawKPI(term){
   const pc=primaryComp(term);
   let vals=[];
   DATA.students.forEach(s=>DATA.subjects.forEach(su=>{const v=getVal(s,su,pc,term); if(v!=null)vals.push(v);}));
   const avg = vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length):0;
   el("kpi").innerHTML=`
-   <div class="card"><div class="num">${DATA.students.length}</div><div class="lbl">${t("students")}</div></div>
-   <div class="card"><div class="num">${DATA.subjects.length}</div><div class="lbl">${t("subjects")}</div></div>
-   <div class="card"><div class="num">${FILES.length||1}</div><div class="lbl">${t("files")}</div></div>
-   <div class="card"><div class="num">${avg.toFixed(1)}</div><div class="lbl">${t("avg")} (${COMP_LABEL(pc)})</div></div>`;
-}
-function drawSubjectAvg(term){
-  const comps=selectedComps(term); if(!comps.length) comps.push("total");
-  const labels=DATA.subjects;
-  const datasets=comps.map((cp,i)=>({
-    label:COMP_LABEL(cp),
-    data:labels.map(su=>{
-      const vs=DATA.students.map(s=>getVal(s,su,cp,term)).filter(v=>v!=null);
-      return vs.length? +(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2):0;
-    }),
-    backgroundColor:PALETTE[i%PALETTE.length], borderRadius:6
-  }));
-  mk("chSubjAvg",{type:"bar",data:{labels,datasets},
-    options:{responsive:true,plugins:{legend:{position:"bottom"}},
-      scales:{x:{ticks:{font:{size:10}}}}}});
-}
-function studentScore(s,term){ // normalized 0..100 across subjects for primary comp
-  const pc=primaryComp(term); let ps=[];
-  DATA.subjects.forEach(su=>{
-    const v=getVal(s,su,pc,term); if(v==null) return;
-    let mx=0; DATA.students.forEach(o=>{const ov=getVal(o,su,pc,term); if(ov!=null&&ov>mx)mx=ov;});
-    if(mx>0) ps.push(v/mx*100);
-  });
-  return ps.length? ps.reduce((a,b)=>a+b,0)/ps.length : 0;
-}
-function drawDistribution(term){
-  const buckets=[0,0,0,0,0];
-  DATA.students.forEach(s=>{const sc=studentScore(s,term);
-    if(sc>=90)buckets[0]++; else if(sc>=80)buckets[1]++; else if(sc>=70)buckets[2]++;
-    else if(sc>=60)buckets[3]++; else buckets[4]++;});
-  mk("chDist",{type:"doughnut",data:{
-    labels:[t("excellent"),t("vgood"),t("good"),t("pass"),t("weak")],
-    datasets:[{data:buckets,backgroundColor:["#1e7d4f","#2f8f79","#b6892b","#d08c3a","#b02a37"]}]},
-    options:{responsive:true,plugins:{legend:{position:"bottom"}}}});
-}
-function drawTop(term){
-  const pc=primaryComp(term);
-  const subj=el("subjSel").value;
-  const arr=DATA.students.map(s=>{
-    let tot=0,cnt=0;
-    const subs= subj? [subj]:DATA.subjects;
-    subs.forEach(su=>{const v=getVal(s,su,pc,term); if(v!=null){tot+=v;cnt++;}});
-    return {name:s.name, val: cnt? tot:0};
-  }).sort((a,b)=>b.val-a.val).slice(0,10);
-  mk("chTop",{type:"bar",data:{labels:arr.map(a=>a.name),
-    datasets:[{label:COMP_LABEL(pc)+(subj?(" · "+subj):""),data:arr.map(a=>a.val),
-      backgroundColor:GREEN,borderRadius:6}]},
-    options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}}}});
-}
-function drawStudent(){
-  if(!DATA) return;
-  const term=el("termSel").value, pc=primaryComp(term);
-  const i=+el("studentSel").value||0; const s=DATA.students[i]; if(!s) return;
-  const labels=DATA.subjects;
-  mk("chStudent",{type:"radar",data:{labels,
-    datasets:[{label:s.name,data:labels.map(su=>getVal(s,su,pc,term)||0),
-      backgroundColor:"#0e5a4d33",borderColor:GREEN,pointBackgroundColor:GOLD}]},
-    options:{responsive:true,plugins:{legend:{position:"bottom"}},
-      scales:{r:{ticks:{font:{size:9}},pointLabels:{font:{size:10}}}}}});
-}
-function drawCompare(term){
-  const pc=primaryComp(term);
-  const subj=el("subjSel").value || DATA.subjects[0];
-  const arr=DATA.students.map(s=>({name:s.name,val:getVal(s,subj,pc,term)||0}));
-  mk("chCompare",{type:"bar",data:{labels:arr.map(a=>a.name),
-    datasets:[{label:subj+" · "+COMP_LABEL(pc),data:arr.map(a=>a.val),backgroundColor:GOLD,borderRadius:5}]},
-    options:{responsive:true,plugins:{legend:{position:"bottom"}},
-      scales:{x:{ticks:{font:{size:9}}}}}});
-}
-function drawTable(term){
-  const pc=primaryComp(term);
-  const tb=el("dataTable");
-  let head=`<tr><th>#</th><th>${t("name")}</th>`+DATA.subjects.map(s=>`<th>${s}</th>`).join("")+`</tr>`;
-  let body=DATA.students.map((s,i)=>`<tr><td>${i+1}</td><td>${s.name}</td>`+
-    DATA.subjects.map(su=>{const v=getVal(s,su,pc,term); return `<td>${v==null?"—":(+v).toFixed(0)}</td>`;}).join("")+
-    `</tr>`).join("");
-  tb.innerHTML=head+body;
-}
-function download(kind){
-  const src=el("sourceSel").value, term=el("termSel").value, comp=primaryComp(term);
-  let url=`/api/download/${kind}?term=${term}&component=${comp}`+(src?("&upload_id="+src):"");
-  window.location = url;
-}
+   <div class="kpi-card kpi-a"><div class="kpi-ic">👥</div><div><div class="num">${DATA.students.length}</div><div class="lbl">${t("students")}</div></div></div>
+   <div class="kpi-card kpi-b"><div class="kpi-ic">📚</div><div><div class="num">${DATA.subjects.length}</div><div class="lbl">${t("subjects")}</div></div></div>
+   <div class="kpi-card
