@@ -387,9 +387,22 @@ def _load_upload(uid, upload_id, allow_admin=False):
         return None
     return row
 
+def _ids_param(raw):
+    return [int(x) for x in (raw or "").split(",") if x.strip().lstrip("-").isdigit()]
+
 @app.route("/api/my/data")
 @login_required
 def api_my_data():
+    ids = request.args.get("ids")
+    if ids:  # merge a chosen subset of files (multi-select)
+        parsed = []
+        for iid in _ids_param(ids):
+            row = _load_upload(g.user["id"], iid)
+            if row:
+                parsed.append(json.loads(row["parsed_json"]))
+        if not parsed:
+            return jsonify({"error": "not_found"}), 404
+        return jsonify(_merge(parsed))
     upload_id = request.args.get("upload_id")
     if upload_id:
         row = _load_upload(g.user["id"], int(upload_id))
@@ -443,9 +456,20 @@ def _safe_name(name):
 @app.route("/api/download/<kind>")
 @login_required
 def api_download(kind):
+    ids = request.args.get("ids")
     upload_id = request.args.get("upload_id")
     is_admin_view = False
-    if upload_id:
+    row = None
+    if ids:  # merge a chosen subset of files (multi-select)
+        parsed = []
+        for iid in _ids_param(ids):
+            r = _load_upload(g.user["id"], iid)
+            if r:
+                parsed.append(json.loads(r["parsed_json"]))
+        if not parsed:
+            return jsonify({"error": "not_found"}), 404
+        data = _merge(parsed)
+    elif upload_id:
         row = _load_upload(g.user["id"], int(upload_id))
         if not row and g.user["role"] == "admin":
             row = _load_upload(None, int(upload_id), allow_admin=True); is_admin_view = True
@@ -455,7 +479,6 @@ def api_download(kind):
     else:
         rows = db().execute("SELECT parsed_json FROM uploads WHERE user_id=?", (g.user["id"],)).fetchall()
         data = _merge([json.loads(r["parsed_json"]) for r in rows])
-        row = None
     display = g.user["name"]
     base = _safe_name(display)
     if kind == "excel":
