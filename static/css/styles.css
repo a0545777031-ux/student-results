@@ -95,8 +95,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);b
 .side a:hover,.side button.navi:hover{background:#f1f6f4}
 .side .navi.active{background:var(--green);color:#fff}
 .main{padding:28px;overflow:auto}
-.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
-.page-head h1{margin:0;font-size:24px;color:var(--green-d)}
+.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.page-head h1{margin:0;font-size:20px;color:var(--green-d)}
 .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .kpi-card{position:relative;display:flex;align-items:center;gap:14px;background:#fff;
   border:1px solid var(--line);border-radius:16px;padding:18px 20px;overflow:hidden;
@@ -133,7 +133,7 @@ table.data th{background:var(--green);color:#fff;padding:11px 12px;text-align:st
 table.data td{padding:10px 12px;border-top:1px solid var(--line)}
 table.data tr:nth-child(even) td{background:#f9fbfa}
 table.data tr:hover td{background:#eef5f3}
-.tablewrap{overflow:auto;border-radius:12px}
+.tablewrap{overflow:auto;border-radius:12px;max-height:230px}
 /* field chips */
 .fields{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 20px}
 .chip{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);
@@ -154,25 +154,30 @@ table.data tr:hover td{background:#eef5f3}
 .charts{gap:16px}
 .chartcard{padding:16px 16px 12px}
 .chartcard h3{margin:0 0 10px;font-size:15px}
-.card.compact{padding:16px;margin-bottom:16px}
+/* extra-compact: tile every chart to fit one screen without scrolling */
+.charts.compact3{gap:12px}
+.charts.compact3 .chartcard{padding:11px 12px 9px}
+.charts.compact3 .chartcard h3{margin:0 0 6px;font-size:13.5px}
+.charts.compact3 .chartcard h3::before{width:7px;height:7px}
+.card.compact{padding:11px 14px;margin-bottom:12px}
 .card.compact label{margin-top:0}
-.fields{margin:8px 0 12px;gap:8px}
+.fields{margin:6px 0 10px;gap:8px}
 .chip{padding:6px 12px;font-size:13px}
-.kpi{gap:14px;margin-bottom:18px}
-.kpi-card{padding:14px 16px}
-.kpi-card .num{font-size:26px}
-.kpi-ic{width:46px;height:46px;font-size:22px}
+.kpi{gap:12px;margin-bottom:12px}
+.kpi-card{padding:10px 14px}
+.kpi-card .num{font-size:22px}
+.kpi-ic{width:40px;height:40px;font-size:19px}
 table.data.compact{font-size:12.5px}
 table.data.compact th,table.data.compact td{padding:7px 9px}
 .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 /* ratings panel */
-.ratings{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.rating-tile{border:1.5px solid var(--line);border-radius:14px;padding:14px 12px;text-align:center;
+.ratings{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.rating-tile{border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;text-align:center;
   cursor:pointer;transition:.15s;background:#fff;position:relative;overflow:hidden}
 .rating-tile:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
 .rating-tile::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--rc)}
-.rating-tile .rc-num{font-size:30px;font-weight:800;color:var(--rc)}
-.rating-tile .rc-lbl{font-size:13px;font-weight:700;color:var(--ink);margin-top:2px}
+.rating-tile .rc-num{font-size:23px;font-weight:800;color:var(--rc)}
+.rating-tile .rc-lbl{font-size:12.5px;font-weight:700;color:var(--ink);margin-top:1px}
 .rating-tile.on{border-color:var(--rc);background:var(--rcl)}
 .rating-names{margin-top:12px;background:#f9fbfa;border:1px solid var(--line);border-radius:12px;
   padding:14px 16px;font-size:14px;line-height:1.9;display:none}
