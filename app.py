@@ -30,6 +30,21 @@ ALLOWED = {".pdf", ".xlsx", ".xls", ".csv"}
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["MAX_CONTENT_LENGTH"] = 60 * 1024 * 1024  # 60MB per request
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0  # never cache static files (always serve fresh)
+
+# Cache-busting: a version string that changes on every process start (deploy/restart),
+# appended to static asset URLs so browsers always pick up the newest CSS/JS.
+import time as _time
+ASSET_V = str(int(_time.time()))
+@app.context_processor
+def _inject_asset_v():
+    return {"ASSET_V": ASSET_V}
+
+@app.after_request
+def _no_cache_static(resp):
+    if request.path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 # ---------------- DB ----------------
 # Persistent storage: if DATABASE_URL is set (e.g. a free cloud PostgreSQL),
