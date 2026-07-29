@@ -1,7 +1,7 @@
 // User dashboard: upload, parsing results, analysis & charts, downloads.
 const GREEN="#0e5a4d", GOLD="#b6892b", PALETTE=["#0e5a4d","#b6892b","#2f8f79","#c9a24b",
   "#1b6f9c","#8a5a2b","#4a9d6e","#d08c3a","#5b7fb0","#7a6f3a","#2d7d6a","#a8863c"];
-let DATA=null, SELECTED=new Set(), CHARTS={}, FILES=[];
+let DATA=null, SELECTED=new Set(), CHARTS={}, FILES=[], SRC=new Set();
 const COMP_LABEL = k => t("field_"+k);
 
 document.addEventListener("DOMContentLoaded", init);
@@ -14,7 +14,8 @@ async function init(){
   el("logoutSide").onclick = async e=>{e.preventDefault(); await api("/api/logout",{method:"POST"}); location.href="/";};
   document.querySelectorAll(".navi").forEach(b=> b.onclick=()=>switchSec(b.dataset.sec));
   setupUpload();
-  el("sourceSel").onchange = loadData;
+  el("sourceBtn").onclick = e=>{ e.stopPropagation(); el("sourcePanel").classList.toggle("hidden"); };
+  document.addEventListener("click", e=>{ const ms=el("sourceMS"); if(ms && !ms.contains(e.target)) el("sourcePanel").classList.add("hidden"); });
   el("termSel").onchange = render;
   el("subjSel").onchange = render;
   el("studentSel").onchange = drawStudent;
@@ -88,9 +89,7 @@ async function doUpload(){
 /* ---------- files ---------- */
 async function refreshFiles(){
   const r=await api("/api/my/uploads"); FILES=r.data||[];
-  // source selector
-  const sel=el("sourceSel"); sel.innerHTML=`<option value="">${t("all_files")}</option>`+
-    FILES.map(f=>`<option value="${f.id}">${f.orig_name} (${f.n_students})</option>`).join("");
+  buildSource();
   // files table
   const tb=el("filesTable");
   tb.innerHTML=`<tr><th>#</th><th>${t("files")}</th><th>${t("students")}</th><th>${t("created")}</th><th>${t("actions")}</th></tr>`+
@@ -101,6 +100,31 @@ async function refreshFiles(){
       <a class="btn sm ghost" href="/api/download/original?upload_id=${f.id}">${t("dl_original")}</a></td>
     </tr>`).join(""):`<tr><td colspan="5" style="text-align:center;color:#999">${t("no_data")}</td></tr>`);
 }
+/* ---------- data-source multi-select ---------- */
+function srcLabel(){
+  const n=SRC.size;
+  if(n===0) return t("all_files");
+  if(n===1){ const f=FILES.find(x=>x.id===[...SRC][0]); return f? f.orig_name : "1"; }
+  return `${n} ${t("files")}`;
+}
+function buildSource(){
+  const panel=el("sourcePanel"); if(!panel) return;
+  const ids=new Set(FILES.map(f=>f.id));
+  SRC=new Set([...SRC].filter(i=>ids.has(i)));  // drop deleted files
+  const allOn = SRC.size===0;
+  let html=`<label class="ms-opt ms-all"><input type="checkbox" data-all="1" ${allOn?"checked":""}> <b>${t("all_files")}</b></label>`;
+  html+=FILES.map(f=>`<label class="ms-opt"><input type="checkbox" value="${f.id}" ${SRC.has(f.id)?"checked":""}> <span>${f.orig_name}</span> <small>(${f.n_students})</small></label>`).join("");
+  panel.innerHTML=html;
+  panel.querySelectorAll("input").forEach(inp=>{
+    inp.onchange=()=>{
+      if(inp.dataset.all){ SRC.clear(); }
+      else { const id=+inp.value; if(inp.checked) SRC.add(id); else SRC.delete(id); }
+      buildSource();
+      loadData();
+    };
+  });
+  const lbl=el("sourceLbl"); if(lbl) lbl.textContent=srcLabel();
+}
 async function delFile(id){
   if(!confirm(t("confirm_delete"))) return;
   await api("/api/my/uploads/"+id,{method:"DELETE"});
@@ -109,8 +133,7 @@ async function delFile(id){
 
 /* ---------- analysis ---------- */
 async function loadData(){
-  const src=el("sourceSel").value;
-  const r=await api("/api/my/data"+(src?("?upload_id="+src):""));
+  const r=await api("/api/my/data"+(SRC.size?("?ids="+[...SRC].join(",")):""));
   DATA=r.data;
   const has = DATA && DATA.students && DATA.students.length;
   el("noData").classList.toggle("hidden", !!has);
@@ -226,7 +249,7 @@ function drawKPI(term){
   DATA.students.forEach(s=>DATA.subjects.forEach(su=>{const v=getVal(s,su,pc,term); if(v!=null)vals.push(v);}));
   const avg = vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length):0;
   const kc=(cls,ic,num,lbl)=>`<div class="kpi-card ${cls}"><div class="kpi-ic">${ic}</div><div><div class="num">${num}</div><div class="lbl">${lbl}</div></div></div>`;
-  el("kpi").innerHTML = kc("kpi-a","👥",DATA.students.length,t("students"))+kc("kpi-b","📚",DATA.subjects.length,t("subjects"))+kc("kpi-c","🗂️",FILES.length||1,t("files"))+kc("kpi-d","📊",avg.toFixed(1),t("avg"));
+  el("kpi").innerHTML = kc("kpi-a","👥",DATA.students.length,t("students"))+kc("kpi-b","📚",DATA.subjects.length,t("subjects"))+kc("kpi-c","🗂️",SRC.size||FILES.length||1,t("files"))+kc("kpi-d","📊",avg.toFixed(1),t("avg"));
 }
 function drawSubjectAvg(term){
   const comps=selectedComps(term); if(!comps.length) comps.push("total");
@@ -304,7 +327,7 @@ function drawTable(term){
   tb.innerHTML=head+body;
 }
 function download(kind){
-  const src=el("sourceSel").value, term=el("termSel").value, comp=primaryComp(term);
-  let url=`/api/download/${kind}?term=${term}&component=${comp}`+(src?("&upload_id="+src):"");
+  const term=el("termSel").value, comp=primaryComp(term);
+  let url=`/api/download/${kind}?term=${term}&component=${comp}`+(SRC.size?("&ids="+[...SRC].join(",")):"");
   window.location = url;
 }
