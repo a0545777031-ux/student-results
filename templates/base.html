@@ -6,7 +6,7 @@
 <title>{% block title %}تحليل نتائج الطلاب{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/styles.css">
+<link rel="stylesheet" href="/static/css/styles.css?v={{ ASSET_V }}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e5a4d'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='%23b6892b'>📊</text></svg>">
 </head>
 <body dir="rtl">
@@ -34,8 +34,8 @@
 </div></footer>
 {% endblock %}
 
-<script src="/static/js/i18n.js"></script>
-<script src="/static/js/common.js"></script>
+<script src="/static/js/i18n.js?v={{ ASSET_V }}"></script>
+<script src="/static/js/common.js?v={{ ASSET_V }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
