@@ -32,11 +32,41 @@ app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["MAX_CONTENT_LENGTH"] = 60 * 1024 * 1024  # 60MB per request
 
 # ---------------- DB ----------------
+# Persistent storage: if DATABASE_URL is set (e.g. a free cloud PostgreSQL),
+# use PostgreSQL so users/data survive every restart and redeploy. Otherwise
+# fall back to a local SQLite file (used for local development only).
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+PG = DATABASE_URL.startswith("postgres")
+if PG:
+    import psycopg
+    from psycopg.rows import dict_row
+
+class _Conn:
+    """Small wrapper giving the same .execute(sql, params) / .fetchone() / .fetchall()
+    interface for both SQLite and PostgreSQL. SQL uses '?' placeholders everywhere;
+    they are translated to '%s' for PostgreSQL automatically."""
+    def __init__(self):
+        if PG:
+            self.raw = psycopg.connect(DATABASE_URL, row_factory=dict_row, autocommit=True)
+        else:
+            self.raw = sqlite3.connect(DB_PATH)
+            self.raw.row_factory = sqlite3.Row
+            self.raw.execute("PRAGMA foreign_keys=ON")
+    def execute(self, sql, params=()):
+        if PG:
+            return self.raw.execute(sql.replace("?", "%s"), params)
+        return self.raw.execute(sql, params)
+    def commit(self):
+        try:
+            self.raw.commit()
+        except Exception:
+            pass
+    def close(self):
+        self.raw.close()
+
 def db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys=ON")
+        g.db = _Conn()
     return g.db
 
 @app.teardown_appcontext
@@ -46,35 +76,59 @@ def close_db(exc):
         d.close()
 
 def init_db():
-    con = sqlite3.connect(DB_PATH)
-    con.executescript("""
-    CREATE TABLE IF NOT EXISTS users(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE,
-        username TEXT UNIQUE,
-        password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'user',
-        status TEXT NOT NULL DEFAULT 'pending',
-        created_at TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS content(
-        key TEXT PRIMARY KEY,
-        value_ar TEXT,
-        value_en TEXT
-    );
-    CREATE TABLE IF NOT EXISTS uploads(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        orig_name TEXT,
-        stored_name TEXT,
-        filetype TEXT,
-        n_students INTEGER DEFAULT 0,
-        parsed_json TEXT,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-    """)
+    con = _Conn()
+    if PG:
+        con.execute("""CREATE TABLE IF NOT EXISTS users(
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            username TEXT UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL)""")
+        con.execute("""CREATE TABLE IF NOT EXISTS content(
+            key TEXT PRIMARY KEY,
+            value_ar TEXT,
+            value_en TEXT)""")
+        con.execute("""CREATE TABLE IF NOT EXISTS uploads(
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            orig_name TEXT,
+            stored_name TEXT,
+            filetype TEXT,
+            n_students INTEGER DEFAULT 0,
+            parsed_json TEXT,
+            created_at TEXT NOT NULL)""")
+    else:
+        con.raw.executescript("""
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            username TEXT UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'user',
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS content(
+            key TEXT PRIMARY KEY,
+            value_ar TEXT,
+            value_en TEXT
+        );
+        CREATE TABLE IF NOT EXISTS uploads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            orig_name TEXT,
+            stored_name TEXT,
+            filetype TEXT,
+            n_students INTEGER DEFAULT 0,
+            parsed_json TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        """)
     now = datetime.datetime.utcnow().isoformat()
     cur = con.execute("SELECT id FROM users WHERE username=?", (ADMIN_USERNAME,))
     if not cur.fetchone():
@@ -307,12 +361,12 @@ def api_upload():
         try:
             parsed = _parse_any(path, ext)
             n = len(parsed.get("students", []))
-            con.execute("INSERT INTO uploads(user_id,orig_name,stored_name,filetype,n_students,parsed_json,created_at) "
-                        "VALUES(?,?,?,?,?,?,?)",
-                        (g.user["id"], orig, stored, ext, n, json.dumps(parsed, ensure_ascii=False), now))
+            cur = con.execute("INSERT INTO uploads(user_id,orig_name,stored_name,filetype,n_students,parsed_json,created_at) "
+                              "VALUES(?,?,?,?,?,?,?) RETURNING id",
+                              (g.user["id"], orig, stored, ext, n, json.dumps(parsed, ensure_ascii=False), now))
+            new_id = cur.fetchone()["id"]
             con.commit()
-            results.append({"name": orig, "ok": True, "n_students": n,
-                            "id": con.execute("SELECT last_insert_rowid()").fetchone()[0]})
+            results.append({"name": orig, "ok": True, "n_students": n, "id": new_id})
         except Exception as e:
             results.append({"name": orig, "ok": False, "error": str(e)[:200]})
     return jsonify({"results": results})

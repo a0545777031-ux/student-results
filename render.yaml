@@ -6,9 +6,19 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
       - key: SECRET_KEY
         generateValue: true
       - key: ADMIN_USERNAME
         value: Admin999
       - key: ADMIN_PASSWORD
         value: "123"
+      # قاعدة البيانات الدائمة (PostgreSQL). القيمة تُضبط يدوياً في لوحة Render
+      # (Environment) حتى لا تُحذف بيانات المستخدمين عند أي تحديث.
+      - key: DATABASE_URL
+        sync: false
+
+# البيانات (المستخدمون ونتائجهم) تُحفظ الآن في قاعدة PostgreSQL سحابية دائمة
+# عبر متغيّر DATABASE_URL، لذا لا تُفقد عند إعادة النشر أو خمول الخدمة على
+# الخطة المجانية. الملفات الأصلية المرفوعة تبقى على قرص مؤقت (اختياري).
