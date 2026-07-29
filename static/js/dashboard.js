@@ -301,12 +301,14 @@ function drawStudent(){
   if(!DATA) return;
   const term=el("termSel").value, pc=primaryComp(term);
   const i=+el("studentSel").value||0; const s=DATA.students[i]; if(!s) return;
-  const labels=DATA.subjects;
-  mk("chStudent",{type:"radar",data:{labels,
-    datasets:[{label:s.name,data:labels.map(su=>getVal(s,su,pc,term)||0),
-      backgroundColor:"#0e5a4d33",borderColor:GREEN,pointBackgroundColor:GOLD}]},
+  // vertical bars: subject name at the base, grade on top, sorted highest-first
+  const arr=DATA.subjects.map(su=>({subj:su, val:getVal(s,su,pc,term)}))
+            .filter(o=>o.val!=null).sort((a,b)=>b.val-a.val);
+  mk("chStudent",{type:"bar",data:{labels:arr.map(a=>a.subj),
+    datasets:[{label:s.name,data:arr.map(a=>a.val),
+      backgroundColor:arr.map((a,k)=>PALETTE[k%PALETTE.length]),borderRadius:6}]},
     options:{responsive:true,plugins:{legend:{position:"bottom"}},
-      scales:{r:{ticks:{font:{size:9}},pointLabels:{font:{size:10}}}}}});
+      scales:{x:{ticks:{font:{size:9}}}}}});
 }
 function drawCompare(term){
   const pc=primaryComp(term);
