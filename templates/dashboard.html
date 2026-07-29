@@ -33,7 +33,10 @@
       <div class="page-head">
         <h1 data-i18n="analysis_title"></h1>
         <div class="toolbar">
-          <select id="sourceSel"></select>
+          <div class="ms" id="sourceMS">
+            <button type="button" class="ms-btn" id="sourceBtn"><span id="sourceLbl"></span><span class="ms-caret">▾</span></button>
+            <div class="ms-panel hidden" id="sourcePanel"></div>
+          </div>
           <button class="btn sm gold" id="dlExcel">⬇️ <span data-i18n="dl_excel"></span></button>
           <button class="btn sm" id="repPdf">📄 <span data-i18n="report_pdf"></span></button>
           <button class="btn sm ghost" id="repWord">📝 <span data-i18n="report_word"></span></button>
