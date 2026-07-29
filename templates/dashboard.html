@@ -35,13 +35,14 @@
         <div class="toolbar">
           <select id="sourceSel"></select>
           <button class="btn sm gold" id="dlExcel">⬇️ <span data-i18n="dl_excel"></span></button>
-          <button class="btn sm" id="dlPdf">📄 <span data-i18n="dl_pdf"></span></button>
+          <button class="btn sm" id="repPdf">📄 <span data-i18n="report_pdf"></span></button>
+          <button class="btn sm ghost" id="repWord">📝 <span data-i18n="report_word"></span></button>
         </div>
       </div>
       <div id="noData" class="card" style="text-align:center;color:var(--muted)"><span data-i18n="no_data"></span></div>
       <div id="analysisBody" class="hidden">
         <div class="kpi" id="kpi"></div>
-        <div class="card" style="margin-bottom:20px">
+        <div class="card compact">
           <label style="margin-top:0" data-i18n="select_fields"></label>
           <div class="fields" id="fieldChips"></div>
           <div class="toolbar">
@@ -54,17 +55,26 @@
             <select id="subjSel"></select>
           </div>
         </div>
-        <div class="charts">
-          <div class="chartcard"><h3 data-i18n="chart_subject_avg"></h3><canvas id="chSubjAvg"></canvas></div>
-          <div class="chartcard"><h3 data-i18n="chart_dist"></h3><canvas id="chDist"></canvas></div>
-          <div class="chartcard full"><h3 data-i18n="chart_top"></h3><canvas id="chTop"></canvas></div>
-          <div class="chartcard"><h3 data-i18n="chart_student"></h3>
-            <select id="studentSel" style="margin-bottom:10px"></select>
-            <canvas id="chStudent"></canvas></div>
-          <div class="chartcard"><h3 data-i18n="chart_compare"></h3><canvas id="chCompare"></canvas></div>
+
+        <!-- RATINGS -->
+        <div class="chartcard full ratings-card">
+          <h3 data-i18n="ratings_title"></h3>
+          <p class="hint" data-i18n="ratings_hint"></p>
+          <div id="ratings" class="ratings"></div>
+          <div id="ratingNames" class="rating-names"></div>
         </div>
-        <div style="margin-top:24px">
-          <div class="tablewrap"><table class="data" id="dataTable"></table></div>
+
+        <div class="charts">
+          <div class="chartcard"><h3 data-i18n="chart_subject_avg"></h3><canvas id="chSubjAvg" height="200"></canvas></div>
+          <div class="chartcard"><h3 data-i18n="chart_dist"></h3><canvas id="chDist" height="200"></canvas></div>
+          <div class="chartcard full"><h3 data-i18n="chart_perSubject"></h3><canvas id="chCompare" height="240"></canvas></div>
+          <div class="chartcard full"><h3 data-i18n="chart_top"></h3><canvas id="chTop" height="300"></canvas></div>
+          <div class="chartcard full"><h3 data-i18n="chart_student"></h3>
+            <select id="studentSel" style="margin-bottom:8px;max-width:320px"></select>
+            <canvas id="chStudent" height="240"></canvas></div>
+        </div>
+        <div style="margin-top:18px">
+          <div class="tablewrap"><table class="data compact" id="dataTable"></table></div>
         </div>
       </div>
     </section>
