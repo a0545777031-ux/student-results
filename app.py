@@ -421,6 +421,26 @@ def api_download(kind):
                              download_name=f"{base}{row['filetype']}")
     return jsonify({"error": "bad_kind"}), 400
 
+# ---------------- graphical report (PDF / Word) ----------------
+@app.route("/api/report", methods=["POST"])
+@login_required
+def api_report():
+    import report as _report
+    payload = request.get_json(force=True, silent=True) or {}
+    fmt = payload.get("format", "pdf")
+    payload["title"] = g.user["name"]
+    base = _safe_name(g.user["name"])
+    try:
+        if fmt == "docx":
+            out = os.path.join(GEN_DIR, f"{base}_{secrets.token_hex(3)}.docx")
+            _report.build_docx(payload, out)
+            return send_file(out, as_attachment=True, download_name=f"تقرير {base}.docx")
+        out = os.path.join(GEN_DIR, f"{base}_{secrets.token_hex(3)}.pdf")
+        _report.build_pdf(payload, out)
+        return send_file(out, as_attachment=True, download_name=f"تقرير {base}.pdf")
+    except Exception as e:
+        return jsonify({"error": str(e)[:300]}), 500
+
 # ---------------- email (optional) ----------------
 def _smtp_conf():
     return {"host": os.environ.get("SMTP_HOST"), "port": int(os.environ.get("SMTP_PORT", "587")),
