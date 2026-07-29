@@ -56,4 +56,9 @@ async function wireHeader(){
   }
   applyI18n();
 }
-document.addEventListener("DOMContentLoaded", ()=>{ applyI18n(); });
+async function fillBrandSchool(){
+  const sub = el("brandSub"); if(!sub) return;
+  try{ const u = await getMe(); sub.textContent = (u && u.role!=="admin") ? (u.name||"") : ""; }
+  catch(e){ sub.textContent=""; }
+}
+document.addEventListener("DOMContentLoaded", ()=>{ applyI18n(); fillBrandSchool(); });
