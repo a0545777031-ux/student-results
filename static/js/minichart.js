@@ -10,7 +10,11 @@
   function setup(cv){
     const p = cv.parentElement;
     const w = (p ? p.clientWidth : cv.clientWidth) || 360;
-    const h = cv.getAttribute("height") ? +cv.getAttribute("height") : 280;
+    // Cache the intended (logical) height ONCE. Setting cv.height below multiplies
+    // it by DPR and rewrites the height attribute, so re-reading it on every redraw
+    // would make the chart grow each time it re-renders (e.g. on subject change).
+    if(cv._logicalH == null) cv._logicalH = cv.getAttribute("height") ? +cv.getAttribute("height") : 280;
+    const h = cv._logicalH;
     cv.width = w*DPR; cv.height = h*DPR; cv.style.width="100%"; cv.style.height=h+"px";
     const ctx = cv.getContext("2d"); ctx.setTransform(DPR,0,0,DPR,0,0);
     return {ctx,w,h};
