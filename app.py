@@ -41,9 +41,14 @@ def _inject_asset_v():
     return {"ASSET_V": ASSET_V}
 
 @app.after_request
-def _no_cache_static(resp):
-    if request.path.startswith("/static/"):
+def _no_cache(resp):
+    # Never cache static assets OR the HTML pages, so browsers always load the
+    # newest code (the HTML embeds the ?v= asset version, so it must stay fresh too).
+    ct = resp.headers.get("Content-Type", "")
+    if request.path.startswith("/static/") or "text/html" in ct:
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
     return resp
 
 # ---------------- DB ----------------
