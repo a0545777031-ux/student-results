@@ -172,8 +172,12 @@ function buildFieldChips(){
     const termTxt = c.term==="t1"? t("term1"):t("term2");
     div.innerHTML=`<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)} · ${termTxt}`;
     div.querySelector("input").onchange=e=>{
-      if(e.target.checked){ SELECTED.add(c.key); ACTIVE_FIELD=c.key; }
-      else { SELECTED.delete(c.key); if(ACTIVE_FIELD===c.key) ACTIVE_FIELD=null; }
+      if(e.target.checked){
+        SELECTED.add(c.key); ACTIVE_FIELD=c.key;
+        const ts=el("termSel"); if(ts && ts.value!==c.term) ts.value=c.term;  // follow the field's term
+      } else {
+        SELECTED.delete(c.key); if(ACTIVE_FIELD===c.key) ACTIVE_FIELD=null;
+      }
       div.classList.toggle("on",e.target.checked); render();
     };
     wrap.appendChild(div);
