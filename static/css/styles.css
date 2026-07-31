@@ -187,6 +187,15 @@ table.data.compact th,table.data.compact td{padding:7px 9px}
 .band-name::before{content:"";position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);
   width:11px;height:11px;border-radius:3px;background:var(--rc,#0e7a63)}
 .band-row input{padding:8px 10px}
+/* rating matrix (subjects x ratings) */
+table.matrix{width:100%;border-collapse:collapse}
+table.matrix th,table.matrix td{text-align:center;border:1px solid var(--line);padding:9px 8px;font-weight:600}
+table.matrix th{background:#f2f7f5;font-weight:800;font-size:13.5px}
+table.matrix td.msubj{text-align:start;font-weight:700;background:#fafcfb;color:var(--green-d)}
+table.matrix td.mcell{cursor:pointer;font-size:16px;font-weight:800;transition:.12s}
+table.matrix td.mcell:hover{background:var(--rc);color:#fff}
+table.matrix td.mcell.zero{color:#c4ccc9;font-weight:600}
+table.matrix td.mcell.on{background:var(--rc);color:#fff}
 .rating-names{margin-top:12px;background:#f9fbfa;border:1px solid var(--line);border-radius:12px;
   padding:14px 16px;font-size:14px;line-height:1.9;display:none}
 .rating-names.show{display:block}
