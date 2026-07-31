@@ -2,6 +2,10 @@
 const GREEN="#0e5a4d", GOLD="#b6892b", PALETTE=["#0e5a4d","#b6892b","#2f8f79","#c9a24b",
   "#1b6f9c","#8a5a2b","#4a9d6e","#d08c3a","#5b7fb0","#7a6f3a","#2d7d6a","#a8863c"];
 let DATA=null, SELECTED=new Set(), CHARTS={}, FILES=[], SRC=new Set();
+const DEFAULT_BANDS=[{key:"excellent",from:90,to:100},{key:"vgood",from:80,to:89},
+  {key:"good",from:70,to:79},{key:"pass",from:60,to:69},{key:"weak",from:0,to:59}];
+const BAND_ORDER=["excellent","vgood","good","pass","weak"];
+let BANDS=normalizeBands(DEFAULT_BANDS), BANDS_CONFIRMED=false, BANDS_LOADED=false;
 const COMP_LABEL = k => t("field_"+k);
 
 document.addEventListener("DOMContentLoaded", init);
@@ -22,6 +26,8 @@ async function init(){
   el("dlExcel").onclick = ()=>download("excel");
   el("repPdf").onclick = ()=>exportReport("pdf");
   el("repWord").onclick = ()=>exportReport("docx");
+  el("bandsConfirm").onclick = saveBands;
+  el("editBands").onclick = async ()=>{ if(!DATA) return; await ensureBands(); showBandsGate(); };
   document.addEventListener("langchange", ()=>{ if(DATA) render(); buildFieldChips(); });
   let rt; window.addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(DATA && !el("sec-analysis").classList.contains("hidden")) render(); }, 250); });
   await refreshFiles();
@@ -137,8 +143,11 @@ async function loadData(){
   DATA=r.data;
   const has = DATA && DATA.students && DATA.students.length;
   el("noData").classList.toggle("hidden", !!has);
-  el("analysisBody").classList.toggle("hidden", !has);
-  if(!has) return;
+  if(!has){ el("analysisBody").classList.add("hidden"); el("bandsGate").classList.add("hidden"); return; }
+  await ensureBands();
+  if(!BANDS_CONFIRMED){ showBandsGate(); return; }   // define rating ranges before analysis
+  el("bandsGate").classList.add("hidden");
+  el("analysisBody").classList.remove("hidden");
   // subject selector
   const ss=el("subjSel"); ss.innerHTML=`<option value="">${t("all_subjects")}</option>`+
     DATA.subjects.map(s=>`<option value="${s}">${s}</option>`).join("");
@@ -190,11 +199,62 @@ function render(){
   drawCompare(term);
   drawTable(term);
 }
+/* ---------- rating bands (user-defined grade ranges) ---------- */
+function normalizeBands(arr){
+  const a=(arr&&arr.length?arr:DEFAULT_BANDS).map(b=>({key:b.key,from:+b.from||0,to:+b.to||0}));
+  a.sort((x,y)=>y.from-x.from);   // highest 'from' first for classification
+  return a;
+}
+async function ensureBands(force){
+  if(BANDS_LOADED && !force) return;
+  const r=await api("/api/my/settings");
+  if(r.ok && r.data){ BANDS=normalizeBands(r.data.bands); BANDS_CONFIRMED=!!r.data.confirmed; }
+  BANDS_LOADED=true;
+}
+function RATE_COLOR(k){ const f=RATE.find(x=>x[0]===k); return f?f[1]:"#0e7a63"; }
+function showBandsGate(){
+  el("noData").classList.add("hidden");
+  el("analysisBody").classList.add("hidden");
+  el("bandsGate").classList.remove("hidden");
+  buildBandsForm();
+}
+function buildBandsForm(){
+  const wrap=el("bandsForm"); if(!wrap) return;
+  const map={}; (BANDS||[]).forEach(b=>map[b.key]=b);
+  wrap.innerHTML=`<div class="band-row band-head"><span>${t("band_rating")}</span><span>${t("band_from")}</span><span>${t("band_to")}</span></div>`+
+    BAND_ORDER.map(k=>{ const b=map[k]||{from:0,to:0};
+      return `<div class="band-row"><span class="band-name" style="--rc:${RATE_COLOR(k)}">${t(k)}</span>
+        <input type="number" min="0" max="100" step="0.5" class="band-from" data-k="${k}" value="${b.from}">
+        <input type="number" min="0" max="100" step="0.5" class="band-to" data-k="${k}" value="${b.to}"></div>`;
+    }).join("");
+}
+async function saveBands(){
+  const bands=BAND_ORDER.map(k=>{
+    const f=document.querySelector(`.band-from[data-k="${k}"]`);
+    const tt=document.querySelector(`.band-to[data-k="${k}"]`);
+    return {key:k, from:+(f&&f.value)||0, to:+(tt&&tt.value)||0};
+  });
+  const btn=el("bandsConfirm"); btn.disabled=true;
+  const r=await api("/api/my/settings",{method:"POST",body:{bands}});
+  btn.disabled=false;
+  if(r.ok){ BANDS=normalizeBands(bands); BANDS_CONFIRMED=true; BANDS_LOADED=true;
+    showMsg("bandsMsg", t("saved"), "ok");
+    setTimeout(()=>{ el("bandsGate").classList.add("hidden"); loadData(); }, 400);
+  } else { showMsg("bandsMsg", LANG==="ar"?"تعذّر الحفظ":"Save failed", "err"); }
+}
 /* ---------- ratings / classification ---------- */
-function levelOf(score){ if(score>=90)return"excellent"; if(score>=80)return"vgood"; if(score>=70)return"good"; if(score>=60)return"pass"; return"weak"; }
+function levelOf(score){
+  for(let i=0;i<BANDS.length;i++){ if(score>=BANDS[i].from) return BANDS[i].key; }
+  return BANDS.length? BANDS[BANDS.length-1].key : "weak";
+}
+function studentAvg(s,term){
+  const pc=primaryComp(term); let sum=0,n=0;
+  DATA.subjects.forEach(su=>{const v=getVal(s,su,pc,term); if(v!=null){sum+=v;n++;}});
+  return n? sum/n : 0;
+}
 function classify(term){
   const out={excellent:[],vgood:[],good:[],pass:[],weak:[]};
-  DATA.students.forEach(s=>{ out[levelOf(studentScore(s,term))].push(s.name); });
+  DATA.students.forEach(s=>{ const k=levelOf(studentAvg(s,term)); if(out[k]) out[k].push(s.name); });
   return out;
 }
 const RATE=[["excellent","#1e7d4f","#1e7d4f14"],["vgood","#2f8f79","#2f8f7914"],
