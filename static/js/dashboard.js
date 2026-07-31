@@ -299,23 +299,44 @@ function drawMatrix(term){
       showMatrixNames(p[0], p[1], MATRIX[id], td); };
   });
 }
+// Render a vertical, copy-friendly list of student names with a one-click copy button.
+function renderNames(box, title, names, color){
+  if(!box) return;
+  if(color) box.style.setProperty("--rc",color);
+  const has = names && names.length;
+  box.innerHTML =
+    `<div class="names-head"><b>${title}:</b>`+
+    (has? `<button type="button" class="btn sm ghost names-copy">📋 ${t("copy_names")}</button>` : "")+
+    `</div>`+
+    (has? `<ol class="names-list">${names.map(n=>`<li>${n}</li>`).join("")}</ol>`
+        : `<div class="names-none">${t("no_one")}</div>`);
+  box.classList.add("show");
+  if(has){
+    const btn=box.querySelector(".names-copy");
+    btn.onclick=()=>{
+      const text=names.join("\n");
+      const done=()=>{ btn.textContent="✔ "+t("copied"); setTimeout(()=>{ btn.textContent="📋 "+t("copy_names"); },1500); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+      } else fallbackCopy(text,done);
+    };
+  }
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement("textarea"); ta.value=text;
+  ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand("copy"); done&&done(); }catch(e){}
+  document.body.removeChild(ta);
+}
 function showMatrixNames(subj,key,names,td){
   document.querySelectorAll("#ratingMatrix .mcell").forEach(x=>x.classList.remove("on"));
   td.classList.add("on");
-  const box=el("matrixNames"); if(!box) return;
-  box.style.setProperty("--rc",RATE_COLOR(key));
-  const tags=(names&&names.length)? names.map(n=>`<span class="tag">${n}</span>`).join("")
-             : `<span style="color:#999">${t("no_one")}</span>`;
-  box.innerHTML=`<b>${subj} — ${t(key)} (${(names||[]).length} ${t("students_word")}):</b><br>${tags}`;
-  box.classList.add("show");
+  renderNames(el("matrixNames"), `${subj} — ${t(key)} (${(names||[]).length} ${t("students_word")})`, names, RATE_COLOR(key));
 }
 function showNames(key,c,names,tile){
   document.querySelectorAll(".rating-tile").forEach(x=>x.classList.remove("on"));
   tile.classList.add("on");
-  const box=el("ratingNames"); box.style.setProperty("--rc",c);
-  const tags = names.length? names.map(n=>`<span class="tag">${n}</span>`).join("") : `<span style="color:#999">${t("no_one")}</span>`;
-  box.innerHTML=`<b>${t(key)} (${names.length} ${t("students_word")}):</b><br>${tags}`;
-  box.classList.add("show");
+  renderNames(el("ratingNames"), `${t(key)} (${names.length} ${t("students_word")})`, names, c);
 }
 /* ---------- graphical report export ---------- */
 async function exportReport(fmt){
