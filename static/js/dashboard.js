@@ -192,6 +192,7 @@ function render(){
   const term=el("termSel").value;
   drawKPI(term);
   drawRatings(term);
+  drawMatrix(term);
   drawSubjectAvg(term);
   drawDistribution(term);
   drawTop(term);
@@ -270,6 +271,43 @@ function drawRatings(term){
     wrap.appendChild(tile);
   });
   el("ratingNames").className="rating-names";
+}
+/* ---------- rating matrix: subjects x rating levels ---------- */
+let MATRIX={};
+function subjectLevel(s,subj,term){
+  const pc=primaryComp(term); const v=getVal(s,subj,pc,term);
+  return v==null? null : levelOf(v);
+}
+function drawMatrix(term){
+  const tb=el("ratingMatrix"); if(!tb) return;
+  const box=el("matrixNames"); if(box){ box.classList.remove("show"); box.innerHTML=""; }
+  MATRIX={};
+  const head=`<tr><th>${t("subject")}</th>`+
+    BAND_ORDER.map(k=>`<th style="color:${RATE_COLOR(k)}">${t(k)}</th>`).join("")+`</tr>`;
+  const body=DATA.subjects.map(subj=>{
+    const cells=BAND_ORDER.map(k=>{
+      const names=DATA.students.filter(s=>subjectLevel(s,subj,term)===k).map(s=>s.name);
+      const id=subj+"|"+k; MATRIX[id]=names;
+      const cls="mcell"+(names.length?"":" zero");
+      return `<td class="${cls}" data-id="${id}" style="--rc:${RATE_COLOR(k)}">${names.length}</td>`;
+    }).join("");
+    return `<tr><td class="msubj">${subj}</td>${cells}</tr>`;
+  }).join("");
+  tb.innerHTML=head+body;
+  tb.querySelectorAll(".mcell").forEach(td=>{
+    td.onclick=()=>{ const id=td.dataset.id; const p=id.split("|");
+      showMatrixNames(p[0], p[1], MATRIX[id], td); };
+  });
+}
+function showMatrixNames(subj,key,names,td){
+  document.querySelectorAll("#ratingMatrix .mcell").forEach(x=>x.classList.remove("on"));
+  td.classList.add("on");
+  const box=el("matrixNames"); if(!box) return;
+  box.style.setProperty("--rc",RATE_COLOR(key));
+  const tags=(names&&names.length)? names.map(n=>`<span class="tag">${n}</span>`).join("")
+             : `<span style="color:#999">${t("no_one")}</span>`;
+  box.innerHTML=`<b>${subj} — ${t(key)} (${(names||[]).length} ${t("students_word")}):</b><br>${tags}`;
+  box.classList.add("show");
 }
 function showNames(key,c,names,tile){
   document.querySelectorAll(".rating-tile").forEach(x=>x.classList.remove("on"));
