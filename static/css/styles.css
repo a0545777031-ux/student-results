@@ -202,6 +202,15 @@ table.matrix td.mcell.on{background:var(--rc);color:#fff}
 .rating-names b{color:var(--rc)}
 .rating-names .tag{display:inline-block;background:#fff;border:1px solid var(--line);
   border-radius:8px;padding:3px 10px;margin:3px;font-size:13px}
+/* vertical, copy-friendly names list */
+.names-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.names-copy{white-space:nowrap}
+.names-list{margin:0;padding:0;list-style:none;counter-reset:nm;
+  display:flex;flex-direction:column;gap:5px;max-height:340px;overflow:auto}
+.names-list li{counter-increment:nm;background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:7px 12px;font-size:14px;font-weight:600;color:var(--ink);line-height:1.5}
+.names-list li::before{content:counter(nm) ". ";color:var(--muted);font-weight:700}
+.names-none{color:#999}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .toolbar select{width:auto;min-width:150px}
 /* multi-select dropdown */
