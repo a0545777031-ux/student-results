@@ -6,6 +6,7 @@ const DEFAULT_BANDS=[{key:"excellent",from:90,to:100},{key:"vgood",from:80,to:89
   {key:"good",from:70,to:79},{key:"pass",from:60,to:69},{key:"weak",from:0,to:59}];
 const BAND_ORDER=["excellent","vgood","good","pass","weak"];
 let BANDS=normalizeBands(DEFAULT_BANDS), BANDS_CONFIRMED=false, BANDS_LOADED=false;
+let ACTIVE_FIELD=null;
 const COMP_LABEL = k => t("field_"+k);
 
 document.addEventListener("DOMContentLoaded", init);
@@ -154,6 +155,7 @@ async function loadData(){
   // default selected fields = totals present
   SELECTED = new Set((DATA.components||[]).filter(c=>c.component==="total").map(c=>c.key));
   if(!SELECTED.size && DATA.components && DATA.components.length) SELECTED.add(DATA.components[0].key);
+  ACTIVE_FIELD = null;
   // student selector
   const stu=el("studentSel");
   stu.innerHTML=DATA.students.map((s,i)=>`<option value="${i}">${s.name}</option>`).join("");
@@ -170,7 +172,8 @@ function buildFieldChips(){
     const termTxt = c.term==="t1"? t("term1"):t("term2");
     div.innerHTML=`<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)} · ${termTxt}`;
     div.querySelector("input").onchange=e=>{
-      if(e.target.checked) SELECTED.add(c.key); else SELECTED.delete(c.key);
+      if(e.target.checked){ SELECTED.add(c.key); ACTIVE_FIELD=c.key; }
+      else { SELECTED.delete(c.key); if(ACTIVE_FIELD===c.key) ACTIVE_FIELD=null; }
       div.classList.toggle("on",e.target.checked); render();
     };
     wrap.appendChild(div);
@@ -184,8 +187,15 @@ function getVal(st, subj, compKey, term){
 function selectedComps(term){ // components chosen for this term
   return [...SELECTED].map(k=>k.split(":")).filter(([c,tm])=>tm===term).map(([c])=>c);
 }
+// The single "driver" field for ratings/matrix/top charts = the field the user
+// last turned on (so checking a field immediately re-bases the whole analysis).
 function primaryComp(term){
-  const cs=selectedComps(term); if(cs.includes("total")) return "total"; return cs[0]||"total";
+  if(ACTIVE_FIELD && SELECTED.has(ACTIVE_FIELD)){
+    const p=ACTIVE_FIELD.split(":");
+    if(p[1]===term) return p[0];
+  }
+  const cs=selectedComps(term);
+  return cs[0] || "total";
 }
 function render(){
   if(!DATA) return;
