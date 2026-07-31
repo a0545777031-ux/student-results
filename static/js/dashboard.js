@@ -170,7 +170,10 @@ function buildFieldChips(){
     const div=document.createElement("label");
     div.className="chip"+(on?" on":"");
     const termTxt = c.term==="t1"? t("term1"):t("term2");
-    div.innerHTML=`<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)} · ${termTxt}`;
+    // The year 'final' total is not tied to one term, so show it without a term suffix.
+    div.innerHTML = c.component==="final"
+      ? `<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)}`
+      : `<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)} · ${termTxt}`;
     div.querySelector("input").onchange=e=>{
       if(e.target.checked){
         SELECTED.add(c.key); ACTIVE_FIELD=c.key;

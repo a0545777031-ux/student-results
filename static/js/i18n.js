@@ -60,7 +60,7 @@ const I18N = {
     save_content:"حفظ المحتوى", saved:"تم الحفظ بنجاح",
     user_reports:"تقارير المستخدم", uploads_count:"عدد الملفات",
     field_short_tests:"اختبارات قصيرة", field_assessment:"أدوات تقييم",
-    field_final_exam:"نهاية الفصل", field_total:"المجموع",
+    field_final_exam:"نهاية الفصل", field_total:"المجموع", field_final:"المجموع النهائي (السنة)",
     logout:"تسجيل الخروج", welcome:"مرحباً"
   },
   en:{
@@ -121,7 +121,7 @@ const I18N = {
     save_content:"Save content", saved:"Saved successfully",
     user_reports:"User reports", uploads_count:"Files",
     field_short_tests:"Short tests", field_assessment:"Assessment tools",
-    field_final_exam:"Final exam", field_total:"Total",
+    field_final_exam:"Final exam", field_total:"Total", field_final:"Final total (year)",
     logout:"Logout", welcome:"Welcome"
   }
 };
