@@ -115,6 +115,9 @@ def init_db():
             n_students INTEGER DEFAULT 0,
             parsed_json TEXT,
             created_at TEXT NOT NULL)""")
+        con.execute("""CREATE TABLE IF NOT EXISTS user_settings(
+            user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            settings_json TEXT)""")
     else:
         con.raw.executescript("""
         CREATE TABLE IF NOT EXISTS users(
@@ -141,6 +144,11 @@ def init_db():
             n_students INTEGER DEFAULT 0,
             parsed_json TEXT,
             created_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS user_settings(
+            user_id INTEGER PRIMARY KEY,
+            settings_json TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         """)
@@ -295,6 +303,52 @@ def api_login():
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
     session.clear()
+    return jsonify({"ok": True})
+
+# ---------------- per-user rating bands (grade ranges) ----------------
+DEFAULT_BANDS = [
+    {"key": "excellent", "from": 90, "to": 100},
+    {"key": "vgood",     "from": 80, "to": 89},
+    {"key": "good",      "from": 70, "to": 79},
+    {"key": "pass",      "from": 60, "to": 69},
+    {"key": "weak",      "from": 0,  "to": 59},
+]
+
+@app.route("/api/my/settings")
+@login_required
+def api_my_settings():
+    row = db().execute("SELECT settings_json FROM user_settings WHERE user_id=?",
+                       (g.user["id"],)).fetchone()
+    if row and row["settings_json"]:
+        try:
+            s = json.loads(row["settings_json"])
+            if isinstance(s, dict) and s.get("bands"):
+                return jsonify({"bands": s["bands"], "confirmed": bool(s.get("confirmed"))})
+        except Exception:
+            pass
+    return jsonify({"bands": DEFAULT_BANDS, "confirmed": False})
+
+@app.route("/api/my/settings", methods=["POST"])
+@login_required
+def api_save_settings():
+    d = request.get_json(force=True, silent=True) or {}
+    bands = d.get("bands")
+    if not isinstance(bands, list) or len(bands) != 5:
+        return jsonify({"error": "bad_bands"}), 400
+    clean = []
+    for b in bands:
+        try:
+            clean.append({"key": str(b.get("key")),
+                          "from": max(0, min(100, round(float(b.get("from", 0)), 2))),
+                          "to":   max(0, min(100, round(float(b.get("to", 0)), 2)))})
+        except Exception:
+            return jsonify({"error": "bad_bands"}), 400
+    payload = json.dumps({"bands": clean, "confirmed": True}, ensure_ascii=False)
+    con = db()
+    con.execute("INSERT INTO user_settings(user_id,settings_json) VALUES(?,?) "
+                "ON CONFLICT(user_id) DO UPDATE SET settings_json=excluded.settings_json",
+                (g.user["id"], payload))
+    con.commit()
     return jsonify({"ok": True})
 
 # ---------------- admin: users ----------------
