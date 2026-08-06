@@ -21,7 +21,7 @@ async function init(){
   setupUpload();
   el("sourceBtn").onclick = e=>{ e.stopPropagation(); el("sourcePanel").classList.toggle("hidden"); };
   document.addEventListener("click", e=>{ const ms=el("sourceMS"); if(ms && !ms.contains(e.target)) el("sourcePanel").classList.add("hidden"); });
-  el("termSel").onchange = render;
+  el("termSel").onchange = onTermChange;
   el("subjSel").onchange = render;
   el("studentSel").onchange = drawStudent;
   el("dlExcel").onclick = ()=>download("excel");
@@ -149,38 +149,70 @@ async function loadData(){
   if(!BANDS_CONFIRMED){ showBandsGate(); return; }   // define rating ranges before analysis
   el("bandsGate").classList.add("hidden");
   el("analysisBody").classList.remove("hidden");
-  // subject selector
-  const ss=el("subjSel"); ss.innerHTML=`<option value="">${t("all_subjects")}</option>`+
-    DATA.subjects.map(s=>`<option value="${s}">${s}</option>`).join("");
-  // default selected fields = totals present
-  SELECTED = new Set((DATA.components||[]).filter(c=>c.component==="total").map(c=>c.key));
-  if(!SELECTED.size && DATA.components && DATA.components.length) SELECTED.add(DATA.components[0].key);
-  ACTIVE_FIELD = null;
   // student selector
   const stu=el("studentSel");
   stu.innerHTML=DATA.students.map((s,i)=>`<option value="${i}">${s.name}</option>`).join("");
+  // Cascading selection: pick a term first, then only that term's fields/subjects.
+  // If the current term has no components, fall back to a term that does.
+  ensureTermHasData();
+  const term=el("termSel").value;
+  selectTermDefaults(term);
+  fillSubjects(term);
+  buildFieldChips();
+  render();
+}
+// True list of terms that actually carry any component in the data.
+function termsWithData(){
+  const s=new Set((DATA&&DATA.components||[]).map(c=>c.term));
+  return ["t1","t2"].filter(x=>s.has(x));
+}
+// Make sure termSel points at a term that has data (avoids an empty field list).
+function ensureTermHasData(){
+  const avail=termsWithData(); if(!avail.length) return;
+  const ts=el("termSel");
+  if(!avail.includes(ts.value)) ts.value=avail[0];
+}
+// Default field for a term = its 'المجموع', else its first available component.
+function selectTermDefaults(term){
+  const comps=(DATA.components||[]).filter(c=>c.term===term);
+  const total=comps.find(c=>c.component==="total") || comps[0];
+  SELECTED=new Set();
+  ACTIVE_FIELD=null;
+  if(total){ SELECTED.add(total.key); ACTIVE_FIELD=total.key; }
+}
+// Subjects that actually have any grade recorded in the selected term.
+function fillSubjects(term){
+  const ss=el("subjSel"); if(!ss) return;
+  const prev=ss.value;
+  const subs=DATA.subjects.filter(su=>
+    DATA.students.some(s=>{ const g=s.grades[su]; if(!g) return false;
+      return Object.keys(g).some(ck=> g[ck] && g[ck][term]!=null); }));
+  ss.innerHTML=`<option value="">${t("all_subjects")}</option>`+
+    subs.map(s=>`<option value="${s}">${s}</option>`).join("");
+  ss.value = (prev && subs.includes(prev)) ? prev : "";
+}
+// When the term changes, re-base fields + subjects to the newly chosen term only.
+function onTermChange(){
+  if(!DATA) return;
+  const term=el("termSel").value;
+  selectTermDefaults(term);
+  fillSubjects(term);
   buildFieldChips();
   render();
 }
 function buildFieldChips(){
   if(!DATA) return;
+  const term=el("termSel").value;
   const wrap=el("fieldChips"); wrap.innerHTML="";
-  (DATA.components||[]).forEach(c=>{
+  // Only the selected term's fields are shown (cascading from the term choice above).
+  (DATA.components||[]).filter(c=>c.term===term).forEach(c=>{
     const on=SELECTED.has(c.key);
     const div=document.createElement("label");
     div.className="chip"+(on?" on":"");
-    const termTxt = c.term==="t1"? t("term1"):t("term2");
-    // The year 'final' total is not tied to one term, so show it without a term suffix.
-    div.innerHTML = c.component==="final"
-      ? `<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)}`
-      : `<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)} · ${termTxt}`;
+    div.innerHTML=`<input type="checkbox" ${on?"checked":""}> ${COMP_LABEL(c.component)}`;
     div.querySelector("input").onchange=e=>{
-      if(e.target.checked){
-        SELECTED.add(c.key); ACTIVE_FIELD=c.key;
-        const ts=el("termSel"); if(ts && ts.value!==c.term) ts.value=c.term;  // follow the field's term
-      } else {
-        SELECTED.delete(c.key); if(ACTIVE_FIELD===c.key) ACTIVE_FIELD=null;
-      }
+      if(e.target.checked){ SELECTED.add(c.key); ACTIVE_FIELD=c.key; }
+      else { SELECTED.delete(c.key); if(ACTIVE_FIELD===c.key) ACTIVE_FIELD=null; }
       div.classList.toggle("on",e.target.checked); render();
     };
     wrap.appendChild(div);
