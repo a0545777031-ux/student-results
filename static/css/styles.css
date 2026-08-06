@@ -256,3 +256,6 @@ footer.foot{background:var(--green-d);color:#dfeee9;padding:26px 0;text-align:ce
   nav.mainnav a{padding:7px 9px;font-size:14px}
   .brand{font-size:17px}.main{padding:16px}
 }
+
+/* analyzed-field tag shown in parentheses inside section titles */
+.field-tag{font-size:.72em;font-weight:700;color:var(--gold);white-space:nowrap}
