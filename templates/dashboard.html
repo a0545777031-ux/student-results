@@ -33,10 +33,6 @@
       <div class="page-head">
         <h1 data-i18n="analysis_title"></h1>
         <div class="toolbar">
-          <div class="ms" id="sourceMS">
-            <button type="button" class="ms-btn" id="sourceBtn"><span id="sourceLbl"></span><span class="ms-caret">▾</span></button>
-            <div class="ms-panel hidden" id="sourcePanel"></div>
-          </div>
           <button class="btn sm ghost" id="editBands">🎯 <span data-i18n="edit_bands"></span></button>
           <button class="btn sm gold" id="dlExcel">⬇️ <span data-i18n="dl_excel"></span></button>
           <button class="btn sm" id="repPdf">📄 <span data-i18n="report_pdf"></span></button>
@@ -58,6 +54,10 @@
         <div class="kpi" id="kpi"></div>
         <div class="card compact">
           <div class="toolbar" style="margin-top:0">
+            <label style="margin:0"><b><span data-i18n="grade_label"></span>:</b></label>
+            <select id="classSel"></select>
+          </div>
+          <div class="toolbar">
             <label style="margin:0"><b><span data-i18n="term"></span>:</b></label>
             <select id="termSel">
               <option value="t1" data-i18n="term1"></option>
