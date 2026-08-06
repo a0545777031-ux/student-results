@@ -204,9 +204,23 @@ function primaryComp(term){
   const cs=selectedComps(term);
   return cs[0] || "total";
 }
+// Human label of the field the analysis is currently based on, e.g. "المجموع · الفصل الثاني".
+function activeFieldLabel(term){
+  const pc=primaryComp(term);
+  if(pc==="final") return COMP_LABEL("final");
+  const termTxt = term==="t1"? t("term1") : t("term2");
+  return COMP_LABEL(pc)+" · "+termTxt;
+}
+function updateFieldTags(term){
+  const tag="("+activeFieldLabel(term)+")";
+  const a=el("ratingsField"), b=el("matrixField");
+  if(a) a.textContent=tag;
+  if(b) b.textContent=tag;
+}
 function render(){
   if(!DATA) return;
   const term=el("termSel").value;
+  updateFieldTags(term);
   drawKPI(term);
   drawRatings(term);
   drawMatrix(term);
