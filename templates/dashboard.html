@@ -55,7 +55,10 @@
         <div class="card compact">
           <div class="toolbar" style="margin-top:0">
             <label style="margin:0"><b><span data-i18n="grade_label"></span>:</b></label>
-            <select id="classSel"></select>
+            <div class="ms" id="classMS">
+              <button type="button" class="ms-btn" id="classBtn"><span id="classLbl"></span><span class="ms-caret">▾</span></button>
+              <div class="ms-panel hidden" id="classPanel"></div>
+            </div>
           </div>
           <div class="toolbar">
             <label style="margin:0"><b><span data-i18n="term"></span>:</b></label>
