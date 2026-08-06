@@ -19,7 +19,7 @@ async function init(){
   el("logoutSide").onclick = async e=>{e.preventDefault(); await api("/api/logout",{method:"POST"}); location.href="/";};
   document.querySelectorAll(".navi").forEach(b=> b.onclick=()=>switchSec(b.dataset.sec));
   setupUpload();
-  el("sourceBtn").onclick = e=>{ e.stopPropagation(); el("sourcePanel").classList.toggle("hidden"); };
+  { const sb=el("sourceBtn"); if(sb) sb.onclick = e=>{ e.stopPropagation(); const sp=el("sourcePanel"); if(sp) sp.classList.toggle("hidden"); }; }
   document.addEventListener("click", e=>{ const ms=el("sourceMS"); if(ms && !ms.contains(e.target)) el("sourcePanel").classList.add("hidden"); });
   el("termSel").onchange = onTermChange;
   el("subjSel").onchange = render;
@@ -107,30 +107,43 @@ async function refreshFiles(){
       <a class="btn sm ghost" href="/api/download/original?upload_id=${f.id}">${t("dl_original")}</a></td>
     </tr>`).join(""):`<tr><td colspan="5" style="text-align:center;color:#999">${t("no_data")}</td></tr>`);
 }
-/* ---------- data-source multi-select ---------- */
+/* ---------- grade/class selector (cascade step 1: each uploaded file = a class) ---------- */
 function srcLabel(){
   const n=SRC.size;
   if(n===0) return t("all_files");
-  if(n===1){ const f=FILES.find(x=>x.id===[...SRC][0]); return f? f.orig_name : "1"; }
+  if(n===1){ const f=FILES.find(x=>x.id===[...SRC][0]); return f? classLabel(f) : "1"; }
   return `${n} ${t("files")}`;
 }
+// Class label from the uploaded file name (drop the extension), e.g. "الثالث متوسط أ".
+function classLabel(f){ return (f.orig_name||"").replace(/\.(pdf|xlsx|xls|csv)$/i,""); }
 function buildSource(){
-  const panel=el("sourcePanel"); if(!panel) return;
   const ids=new Set(FILES.map(f=>f.id));
   SRC=new Set([...SRC].filter(i=>ids.has(i)));  // drop deleted files
-  const allOn = SRC.size===0;
-  let html=`<label class="ms-opt ms-all"><input type="checkbox" data-all="1" ${allOn?"checked":""}> <b>${t("all_files")}</b></label>`;
-  html+=FILES.map(f=>`<label class="ms-opt"><input type="checkbox" value="${f.id}" ${SRC.has(f.id)?"checked":""}> <span>${f.orig_name}</span> <small>(${f.n_students})</small></label>`).join("");
-  panel.innerHTML=html;
-  panel.querySelectorAll("input").forEach(inp=>{
-    inp.onchange=()=>{
-      if(inp.dataset.all){ SRC.clear(); }
-      else { const id=+inp.value; if(inp.checked) SRC.add(id); else SRC.delete(id); }
-      buildSource();
-      loadData();
-    };
-  });
-  const lbl=el("sourceLbl"); if(lbl) lbl.textContent=srcLabel();
+  // Primary "الصف الدراسي" selector: pick one class, or all classes together.
+  const cs=el("classSel");
+  if(cs){
+    const cur = SRC.size===1 ? String([...SRC][0]) : "";
+    cs.innerHTML=`<option value="">${t("all_classes")}</option>`+
+      FILES.map(f=>`<option value="${f.id}">${classLabel(f)} (${f.n_students})</option>`).join("");
+    cs.value = cur;
+    cs.onchange=()=>{ SRC = cs.value ? new Set([+cs.value]) : new Set(); loadData(); };
+  }
+  // Legacy multi-select panel (only if still present in the DOM).
+  const panel=el("sourcePanel");
+  if(panel){
+    const allOn = SRC.size===0;
+    let html=`<label class="ms-opt ms-all"><input type="checkbox" data-all="1" ${allOn?"checked":""}> <b>${t("all_files")}</b></label>`;
+    html+=FILES.map(f=>`<label class="ms-opt"><input type="checkbox" value="${f.id}" ${SRC.has(f.id)?"checked":""}> <span>${classLabel(f)}</span> <small>(${f.n_students})</small></label>`).join("");
+    panel.innerHTML=html;
+    panel.querySelectorAll("input").forEach(inp=>{
+      inp.onchange=()=>{
+        if(inp.dataset.all){ SRC.clear(); }
+        else { const id=+inp.value; if(inp.checked) SRC.add(id); else SRC.delete(id); }
+        buildSource(); loadData();
+      };
+    });
+    const lbl=el("sourceLbl"); if(lbl) lbl.textContent=srcLabel();
+  }
 }
 async function delFile(id){
   if(!confirm(t("confirm_delete"))) return;
