@@ -259,3 +259,9 @@ footer.foot{background:var(--green-d);color:#dfeee9;padding:26px 0;text-align:ce
 
 /* analyzed-field tag shown in parentheses inside section titles */
 .field-tag{font-size:.72em;font-weight:700;color:var(--gold);white-space:nowrap}
+
+/* name + grade two-column rows in the names popup */
+.names-list.with-score li{display:flex;align-items:center;gap:8px}
+.names-list li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.names-list li .sc{flex:none;font-weight:800;color:var(--green-d);background:#eaf5f0;
+  border:1px solid var(--line);border-radius:7px;padding:2px 11px;min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
