@@ -330,14 +330,20 @@ function classify(term){
 }
 const RATE=[["excellent","#1e7d4f","#1e7d4f14"],["vgood","#2f8f79","#2f8f7914"],
   ["good","#b6892b","#b6892b1c"],["pass","#d08c3a","#d08c3a1c"],["weak","#b02a37","#b02a3714"]];
+// Students in a rating level (for the term's primary field), each with their average score.
+function ratingMembers(term,key){
+  return DATA.students.map(s=>({name:s.name, score:studentAvg(s,term)}))
+    .filter(o=>levelOf(o.score)===key)
+    .sort((a,b)=>b.score-a.score);
+}
 function drawRatings(term){
-  const cls=classify(term); const wrap=el("ratings"); wrap.innerHTML="";
+  const wrap=el("ratings"); wrap.innerHTML="";
   RATE.forEach(([key,c,cl])=>{
-    const names=cls[key];
+    const members=ratingMembers(term,key);
     const tile=document.createElement("div"); tile.className="rating-tile";
     tile.style.setProperty("--rc",c); tile.style.setProperty("--rcl",cl);
-    tile.innerHTML=`<div class="rc-num">${names.length}</div><div class="rc-lbl">${t(key)}</div>`;
-    tile.onclick=()=>showNames(key,c,names,tile);
+    tile.innerHTML=`<div class="rc-num">${members.length}</div><div class="rc-lbl">${t(key)}</div>`;
+    tile.onclick=()=>showNames(key,c,members,tile);
     wrap.appendChild(tile);
   });
   el("ratingNames").className="rating-names";
@@ -352,14 +358,17 @@ function drawMatrix(term){
   const tb=el("ratingMatrix"); if(!tb) return;
   const box=el("matrixNames"); if(box){ box.classList.remove("show"); box.innerHTML=""; }
   MATRIX={};
+  const pc=primaryComp(term);
   const head=`<tr><th>${t("subject")}</th>`+
     BAND_ORDER.map(k=>`<th style="color:${RATE_COLOR(k)}">${t(k)}</th>`).join("")+`</tr>`;
   const body=DATA.subjects.map(subj=>{
     const cells=BAND_ORDER.map(k=>{
-      const names=DATA.students.filter(s=>subjectLevel(s,subj,term)===k).map(s=>s.name);
-      const id=subj+"|"+k; MATRIX[id]=names;
-      const cls="mcell"+(names.length?"":" zero");
-      return `<td class="${cls}" data-id="${id}" style="--rc:${RATE_COLOR(k)}">${names.length}</td>`;
+      const members=DATA.students.filter(s=>subjectLevel(s,subj,term)===k)
+        .map(s=>({name:s.name, score:getVal(s,subj,pc,term)}))
+        .sort((a,b)=>(b.score??0)-(a.score??0));
+      const id=subj+"|"+k; MATRIX[id]=members;
+      const cls="mcell"+(members.length?"":" zero");
+      return `<td class="${cls}" data-id="${id}" style="--rc:${RATE_COLOR(k)}">${members.length}</td>`;
     }).join("");
     return `<tr><td class="msubj">${subj}</td>${cells}</tr>`;
   }).join("");
@@ -369,22 +378,30 @@ function drawMatrix(term){
       showMatrixNames(p[0], p[1], MATRIX[id], td); };
   });
 }
-// Render a vertical, copy-friendly list of student names with a one-click copy button.
-function renderNames(box, title, names, color){
+// Trim a score to at most one decimal without a trailing ".0" (96.5 -> "96.5", 100 -> "100").
+function fmtScore(v){ return v==null? "" : String(+(+v).toFixed(1)); }
+// Render a vertical, copy-friendly list of student names + their grade, with a copy button.
+// `items` may be plain name strings or {name, score} objects.
+function renderNames(box, title, items, color){
   if(!box) return;
   if(color) box.style.setProperty("--rc",color);
-  const has = names && names.length;
+  const rows=(items||[]).map(x=> typeof x==="string" ? {name:x, score:null} : x);
+  const has = rows.length;
+  const anyScore = rows.some(r=>r.score!=null);
   box.innerHTML =
     `<div class="names-head"><b>${title}:</b>`+
     (has? `<button type="button" class="btn sm ghost names-copy">📋 ${t("copy_names")}</button>` : "")+
     `</div>`+
-    (has? `<ol class="names-list">${names.map(n=>`<li>${n}</li>`).join("")}</ol>`
+    (has? `<ol class="names-list${anyScore?" with-score":""}">`+
+        rows.map(r=>`<li><span class="nm">${r.name}</span>`+
+          (r.score!=null?`<span class="sc">${fmtScore(r.score)}</span>`:"")+`</li>`).join("")+`</ol>`
         : `<div class="names-none">${t("no_one")}</div>`);
   box.classList.add("show");
   if(has){
+    // Tab-separated so pasting into Excel/Sheets lands name and grade in two columns.
+    const text=rows.map(r=> r.score!=null ? `${r.name}\t${fmtScore(r.score)}` : r.name).join("\n");
     const btn=box.querySelector(".names-copy");
     btn.onclick=()=>{
-      const text=names.join("\n");
       const done=()=>{ btn.textContent="✔ "+t("copied"); setTimeout(()=>{ btn.textContent="📋 "+t("copy_names"); },1500); };
       if(navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
