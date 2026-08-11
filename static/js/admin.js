@@ -21,6 +21,11 @@ async function init(){
   el("pwSave").onclick=savePw;
   el("repClose").onclick=()=>el("repModal").classList.remove("show");
   el("saveContent").onclick=saveContent;
+  el("newUserBtn").onclick=openNewUser;
+  el("nuCancel").onclick=()=>el("newUserModal").classList.remove("show");
+  el("nuSave").onclick=createUser;
+  el("trCancel").onclick=()=>el("trModal").classList.remove("show");
+  el("trSave").onclick=doTransfer;
   document.addEventListener("langchange",()=>{renderUsers();});
   await loadUsers(); await loadContent();
   applyI18n();
@@ -54,8 +59,38 @@ function actions(u){
   if(u.status==="suspended"||u.status==="rejected"){ b.push(btn("activate",u.id,"gold")); }
   b.push(`<button class="btn sm ghost" onclick="reports(${u.id})">${t("view_reports")}</button>`);
   b.push(`<button class="btn sm ghost" onclick="askPw(${u.id})">${t("change_pw")}</button>`);
+  b.push(`<button class="btn sm" onclick="askTransfer(${u.id})">🔀 ${t("transfer")}</button>`);
   b.push(`<button class="btn sm danger" onclick="delUser(${u.id})">${t("delete_user")}</button>`);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap">${b.join("")}</div>`;
+}
+/* ------- manual user creation ------- */
+function openNewUser(){
+  el("nuName").value=""; el("nuEmail").value=""; el("nuPw").value="";
+  showMsg("nuMsg","",""); el("newUserModal").classList.add("show");
+}
+async function createUser(){
+  const name=el("nuName").value.trim(), email=el("nuEmail").value.trim(), pw=el("nuPw").value;
+  if(!name||!email||pw.length<4){ showMsg("nuMsg", t("bad_cred"), "err"); return; }
+  const r=await api("/api/admin/users/create",{method:"POST",body:{name,email,password:pw}});
+  if(r.ok){ el("newUserModal").classList.remove("show"); showMsg("uMsg",t("create_ok"),"ok"); await loadUsers(); }
+  else showMsg("nuMsg", r.data&&r.data.error==="email_exists"? t("email_exists_msg") : t("bad_cred"), "err");
+}
+/* ------- transfer a user's files & results to another user ------- */
+let TR_SRC=null;
+function askTransfer(id){
+  TR_SRC=id;
+  const src=USERS.find(u=>u.id===id);
+  el("trFrom").textContent=(src? `${src.name} — ${src.n_uploads} ${t("files")}` : "");
+  const others=USERS.filter(u=>u.id!==id);
+  el("trTarget").innerHTML=others.map(u=>`<option value="${u.id}">${u.name}${u.email?(" ("+u.email+")"):""}</option>`).join("");
+  showMsg("trMsg","",""); el("trModal").classList.add("show");
+}
+async function doTransfer(){
+  const target=el("trTarget").value;
+  if(!target){ showMsg("trMsg", t("no_data"), "err"); return; }
+  const r=await api(`/api/admin/users/${TR_SRC}/transfer`,{method:"POST",body:{target:+target}});
+  if(r.ok){ el("trModal").classList.remove("show"); showMsg("uMsg",t("moved_ok"),"ok"); await loadUsers(); }
+  else showMsg("trMsg", t("bad_cred"), "err");
 }
 function btn(action,id,cls){ return `<button class="btn sm ${cls}" onclick="act('${action}',${id})">${t(action)}</button>`; }
 async function act(action,id){
