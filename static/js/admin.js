@@ -45,7 +45,7 @@ function renderUsers(){
   el("cntActive").textContent=USERS.filter(u=>u.status==="active").length;
   tb.innerHTML=`<tr><th>#</th><th>${t("name")}</th><th>${t("email")}</th>
     <th>${t("status")}</th><th>${t("uploads_count")}</th><th>${t("created")}</th><th>${t("actions")}</th></tr>`+
-    (USERS.length? USERS.map((u,i)=>`<tr>
+    (USERS.length? USERS.map((u,i)=>`<tr id="urow-${u.id}">
       <td>${i+1}</td><td>${u.name}</td><td>${u.email||""}</td>
       <td><span class="badge ${u.status}">${t(u.status)}</span></td>
       <td>${u.n_uploads}</td><td>${(u.created_at||"").slice(0,10)}</td>
@@ -58,10 +58,33 @@ function actions(u){
   if(u.status==="active"){ b.push(btn("suspend",u.id,"danger")); }
   if(u.status==="suspended"||u.status==="rejected"){ b.push(btn("activate",u.id,"gold")); }
   b.push(`<button class="btn sm ghost" onclick="reports(${u.id})">${t("view_reports")}</button>`);
+  b.push(`<button class="btn sm ghost" onclick="toggleLogins(${u.id})">🕘 ${t("recent_logins")}</button>`);
   b.push(`<button class="btn sm ghost" onclick="askPw(${u.id})">${t("change_pw")}</button>`);
   b.push(`<button class="btn sm" onclick="askTransfer(${u.id})">🔀 ${t("transfer")}</button>`);
   b.push(`<button class="btn sm danger" onclick="delUser(${u.id})">${t("delete_user")}</button>`);
   return `<div style="display:flex;gap:6px;flex-wrap:wrap">${b.join("")}</div>`;
+}
+/* ------- recent logins (last 30 days) shown under a user ------- */
+function fmtDT(ts){
+  // stored timestamps are naive UTC; append Z so they convert to local date/time
+  const iso=/[zZ]|[+\-]\d\d:?\d\d$/.test(ts)? ts : ts+"Z";
+  const d=new Date(iso); if(isNaN(d)) return ts;
+  const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+async function toggleLogins(id){
+  const open=el("lrow-"+id);
+  if(open){ open.remove(); return; }
+  const r=await api(`/api/admin/users/${id}/logins`);
+  const list=r.data||[];
+  const row=el("urow-"+id); if(!row) return;
+  const tr=document.createElement("tr"); tr.id="lrow-"+id; tr.className="logins-row";
+  tr.innerHTML=`<td colspan="7"><div class="logins-box">
+    <b>${t("recent_logins")} — ${t("last_30_days")} (${list.length}):</b>`+
+    (list.length? `<ol class="logins-list">${list.map(ts=>`<li>${fmtDT(ts)}</li>`).join("")}</ol>`
+      : `<div style="color:#999;margin-top:6px">${t("no_logins")}</div>`)+
+    `</div></td>`;
+  row.after(tr);
 }
 /* ------- manual user creation ------- */
 function openNewUser(){
