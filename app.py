@@ -408,6 +408,52 @@ def api_admin_user_uploads(uid):
                         "WHERE user_id=? ORDER BY created_at DESC", (uid,)).fetchall()
     return jsonify([dict(r) for r in rows])
 
+@app.route("/api/admin/users/create", methods=["POST"])
+@admin_required
+def api_admin_create_user():
+    """Admin creates a user account directly (already approved / active)."""
+    d = request.get_json(force=True, silent=True) or {}
+    name = (d.get("name") or "").strip()
+    email = (d.get("email") or "").strip().lower()
+    pw = d.get("password") or ""
+    if not name or not email or not pw:
+        return jsonify({"error": "missing_fields"}), 400
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": "invalid_email"}), 400
+    if len(pw) < 4:
+        return jsonify({"error": "weak_password"}), 400
+    con = db()
+    if con.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
+        return jsonify({"error": "email_exists"}), 409
+    now = datetime.datetime.utcnow().isoformat()
+    con.execute("INSERT INTO users(name,email,username,password_hash,role,status,created_at) "
+                "VALUES(?,?,?,?,?,?,?)",
+                (name, email, None, generate_password_hash(pw), "user", "active", now))
+    con.commit()
+    return jsonify({"ok": True})
+
+@app.route("/api/admin/users/<int:uid>/transfer", methods=["POST"])
+@admin_required
+def api_admin_transfer_uploads(uid):
+    """Move all of a user's uploaded files/results to another user."""
+    d = request.get_json(force=True, silent=True) or {}
+    try:
+        target = int(d.get("target"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "bad_target"}), 400
+    if target == uid:
+        return jsonify({"error": "same_user"}), 400
+    con = db()
+    src = con.execute("SELECT id,role FROM users WHERE id=?", (uid,)).fetchone()
+    dst = con.execute("SELECT id,role FROM users WHERE id=?", (target,)).fetchone()
+    if not src or not dst or src["role"] == "admin" or dst["role"] == "admin":
+        return jsonify({"error": "not_found"}), 404
+    row = con.execute("SELECT COUNT(*) AS n FROM uploads WHERE user_id=?", (uid,)).fetchone()
+    moved = (row["n"] if row else 0) or 0
+    con.execute("UPDATE uploads SET user_id=? WHERE user_id=?", (target, uid))
+    con.commit()
+    return jsonify({"ok": True, "moved": moved})
+
 # ---------------- uploads / parsing ----------------
 def _parse_any(path, ext):
     if ext == ".pdf":
