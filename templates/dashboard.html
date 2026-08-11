@@ -10,6 +10,7 @@
     <button class="navi active" data-sec="upload"><span>📥</span><span data-i18n="dash_upload"></span></button>
     <button class="navi" data-sec="analysis"><span>📊</span><span data-i18n="dash_analysis"></span></button>
     <button class="navi" data-sec="files"><span>🗂️</span><span data-i18n="dash_files"></span></button>
+    <a href="#" id="changePwSide"><span>🔑</span><span data-i18n="change_my_pw"></span></a>
     <a href="#" id="logoutSide"><span>🚪</span><span data-i18n="logout"></span></a>
   </aside>
   <main class="main">
@@ -113,6 +114,20 @@
     </section>
   </main>
 </div>
+
+<!-- change-my-password modal -->
+<div class="modal-bg" id="pwModal"><div class="modal">
+  <h3 data-i18n="change_my_pw"></h3>
+  <label style="margin-top:0" data-i18n="new_password"></label>
+  <input type="password" id="myPw1">
+  <label data-i18n="confirm_password"></label>
+  <input type="password" id="myPw2">
+  <div id="pwMsg" class="msg"></div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn gold" id="pwSave" data-i18n="save"></button>
+    <button class="btn ghost" id="pwCancel" data-i18n="cancel"></button>
+  </div>
+</div></div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/js/minichart.js?v={{ ASSET_V }}"></script>
