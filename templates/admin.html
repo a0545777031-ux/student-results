@@ -12,11 +12,14 @@
   <main class="main">
     <section id="sec-users">
       <div class="page-head"><h1 data-i18n="admin_users"></h1>
-        <div class="kpi" style="margin:0;grid-template-columns:repeat(3,auto);gap:10px">
-          <div class="card" style="padding:10px 16px"><span class="badge pending" id="cntPending">0</span>
-            <span data-i18n="admin_pending"></span></div>
-          <div class="card" style="padding:10px 16px"><span class="badge active" id="cntActive">0</span>
-            <span data-i18n="active"></span></div>
+        <div class="toolbar" style="margin:0">
+          <button class="btn gold" id="newUserBtn">➕ <span data-i18n="create_user"></span></button>
+          <div class="kpi" style="margin:0;grid-template-columns:repeat(2,auto);gap:10px">
+            <div class="card" style="padding:10px 16px"><span class="badge pending" id="cntPending">0</span>
+              <span data-i18n="admin_pending"></span></div>
+            <div class="card" style="padding:10px 16px"><span class="badge active" id="cntActive">0</span>
+              <span data-i18n="active"></span></div>
+          </div>
         </div>
       </div>
       <div class="msg" id="uMsg"></div>
@@ -48,6 +51,35 @@
   <h3 data-i18n="user_reports"></h3>
   <div class="tablewrap"><table class="data" id="repTable"></table></div>
   <div style="margin-top:16px;text-align:end"><button class="btn ghost" id="repClose" data-i18n="cancel"></button></div>
+</div></div>
+
+<!-- create user modal -->
+<div class="modal-bg" id="newUserModal"><div class="modal">
+  <h3 data-i18n="create_user"></h3>
+  <label style="margin-top:0" data-i18n="name"></label>
+  <input type="text" id="nuName">
+  <label data-i18n="email"></label>
+  <input type="text" id="nuEmail">
+  <label data-i18n="password"></label>
+  <input type="text" id="nuPw">
+  <div id="nuMsg" class="msg"></div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn gold" id="nuSave" data-i18n="create_btn"></button>
+    <button class="btn ghost" id="nuCancel" data-i18n="cancel"></button>
+  </div>
+</div></div>
+
+<!-- transfer files modal -->
+<div class="modal-bg" id="trModal"><div class="modal">
+  <h3 data-i18n="transfer_title"></h3>
+  <p id="trFrom" style="color:var(--muted);margin:0 0 8px"></p>
+  <label style="margin-top:0" data-i18n="transfer_to"></label>
+  <select id="trTarget"></select>
+  <div id="trMsg" class="msg"></div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn gold" id="trSave" data-i18n="transfer_btn"></button>
+    <button class="btn ghost" id="trCancel" data-i18n="cancel"></button>
+  </div>
 </div></div>
 {% endblock %}
 {% block scripts %}
