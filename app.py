@@ -329,6 +329,23 @@ def api_logout():
     session.clear()
     return jsonify({"ok": True})
 
+@app.route("/api/my/password", methods=["POST"])
+@login_required
+def api_my_password():
+    """A signed-in user changes their own password (entered twice, must match)."""
+    d = request.get_json(force=True, silent=True) or {}
+    pw = d.get("password") or ""
+    pw2 = d.get("confirm") or ""
+    if len(pw) < 4:
+        return jsonify({"error": "weak_password"}), 400
+    if pw != pw2:
+        return jsonify({"error": "mismatch"}), 400
+    con = db()
+    con.execute("UPDATE users SET password_hash=? WHERE id=?",
+                (generate_password_hash(pw), g.user["id"]))
+    con.commit()
+    return jsonify({"ok": True})
+
 # ---------------- per-user rating bands (grade ranges) ----------------
 DEFAULT_BANDS = [
     {"key": "excellent", "from": 90, "to": 100},
