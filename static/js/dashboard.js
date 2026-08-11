@@ -17,6 +17,9 @@ async function init(){
   el("uName").textContent = u.name; el("uEmail").textContent = u.email;
   el("langToggle").onclick = toggleLang;
   el("logoutSide").onclick = async e=>{e.preventDefault(); await api("/api/logout",{method:"POST"}); location.href="/";};
+  el("changePwSide").onclick = e=>{ e.preventDefault(); openMyPw(); };
+  el("pwCancel").onclick = ()=> el("pwModal").classList.remove("show");
+  el("pwSave").onclick = saveMyPw;
   document.querySelectorAll(".navi").forEach(b=> b.onclick=()=>switchSec(b.dataset.sec));
   setupUpload();
   { const cb=el("classBtn"); if(cb) cb.onclick = e=>{ e.stopPropagation(); const cp=el("classPanel"); if(cp) cp.classList.toggle("hidden"); }; }
@@ -39,6 +42,22 @@ function switchSec(sec){
   ["upload","analysis","files"].forEach(s=> el("sec-"+s).classList.toggle("hidden", s!==sec));
   if(sec==="analysis") loadData();
   if(sec==="files") refreshFiles();
+}
+
+/* ---------- change my own password ---------- */
+function openMyPw(){
+  el("myPw1").value=""; el("myPw2").value=""; showMsg("pwMsg","","");
+  el("pwModal").classList.add("show"); el("myPw1").focus();
+}
+async function saveMyPw(){
+  const p1=el("myPw1").value, p2=el("myPw2").value;
+  if(p1.length<4){ showMsg("pwMsg", LANG==="ar"?"كلمة المرور قصيرة جداً (٤ أحرف على الأقل)":"Password too short (min 4)", "err"); return; }
+  if(p1!==p2){ showMsg("pwMsg", t("pw_mismatch"), "err"); return; }
+  const btn=el("pwSave"); btn.disabled=true;
+  const r=await api("/api/my/password",{method:"POST",body:{password:p1,confirm:p2}});
+  btn.disabled=false;
+  if(r.ok){ showMsg("pwMsg", t("pw_changed"), "ok"); setTimeout(()=>el("pwModal").classList.remove("show"), 900); }
+  else showMsg("pwMsg", r.data&&r.data.error==="mismatch"? t("pw_mismatch") : (LANG==="ar"?"تعذّر التغيير":"Failed"), "err");
 }
 
 /* ---------- upload ---------- */

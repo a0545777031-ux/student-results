@@ -69,7 +69,9 @@ const I18N = {
     user_reports:"تقارير المستخدم", uploads_count:"عدد الملفات",
     field_short_tests:"اختبارات قصيرة", field_assessment:"أدوات تقييم",
     field_final_exam:"نهاية الفصل", field_total:"المجموع", field_final:"المجموع النهائي (السنة)",
-    logout:"تسجيل الخروج", welcome:"مرحباً"
+    logout:"تسجيل الخروج", welcome:"مرحباً",
+    change_my_pw:"تغيير كلمة المرور", pw_mismatch:"كلمتا المرور غير متطابقتين",
+    pw_changed:"تم تغيير كلمة المرور بنجاح"
   },
   en:{
     nav_home:"Home", nav_login:"Login", nav_register:"Sign Up",
@@ -138,7 +140,9 @@ const I18N = {
     user_reports:"User reports", uploads_count:"Files",
     field_short_tests:"Short tests", field_assessment:"Assessment tools",
     field_final_exam:"Final exam", field_total:"Total", field_final:"Final total (year)",
-    logout:"Logout", welcome:"Welcome"
+    logout:"Logout", welcome:"Welcome",
+    change_my_pw:"Change password", pw_mismatch:"Passwords do not match",
+    pw_changed:"Password changed successfully"
   }
 };
 let LANG = localStorage.getItem("lang") || "ar";
