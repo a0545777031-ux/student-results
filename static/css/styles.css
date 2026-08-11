@@ -265,3 +265,11 @@ footer.foot{background:var(--green-d);color:#dfeee9;padding:26px 0;text-align:ce
 .names-list li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .names-list li .sc{flex:none;font-weight:800;color:var(--green-d);background:#eaf5f0;
   border:1px solid var(--line);border-radius:7px;padding:2px 11px;min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* admin: recent-logins detail row under a user */
+.logins-row td{background:#f4f8f6;border-top:0}
+.logins-box{padding:4px 2px 8px}
+.logins-list{margin:8px 0 0;padding:0;list-style:none;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:5px}
+.logins-list li{background:#fff;border:1px solid var(--line);border-radius:6px;
+  padding:5px 10px;font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums}
