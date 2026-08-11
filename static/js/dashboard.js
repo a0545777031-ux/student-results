@@ -318,9 +318,21 @@ function levelOf(score){
   for(let i=0;i<BANDS.length;i++){ if(score>=BANDS[i].from) return BANDS[i].key; }
   return BANDS.length? BANDS[BANDS.length-1].key : "weak";
 }
+// Columns that are summaries/non-academic, not part of a subject average.
+const RESULT_SUBJECT="النتيجة";
+const NON_AVG_SUBJECTS=[RESULT_SUBJECT,"المواظبة","السلوك"];
+// A student's overall score for classification. The report has an official
+// "النتيجة" (result) column — use it directly when present so the popup matches
+// the downloaded report exactly. Otherwise average the graded subjects.
 function studentAvg(s,term){
-  const pc=primaryComp(term); let sum=0,n=0;
-  DATA.subjects.forEach(su=>{const v=getVal(s,su,pc,term); if(v!=null){sum+=v;n++;}});
+  const pc=primaryComp(term);
+  const res=getVal(s,RESULT_SUBJECT,pc,term);
+  if(res!=null) return res;
+  let sum=0,n=0;
+  DATA.subjects.forEach(su=>{
+    if(NON_AVG_SUBJECTS.indexOf(su)!==-1) return;
+    const v=getVal(s,su,pc,term); if(v!=null){sum+=v;n++;}
+  });
   return n? sum/n : 0;
 }
 function classify(term){
