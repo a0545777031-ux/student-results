@@ -321,14 +321,22 @@ function levelOf(score){
 // Columns that are summaries/non-academic, not part of a subject average.
 const RESULT_SUBJECT="النتيجة";
 const NON_AVG_SUBJECTS=[RESULT_SUBJECT,"المواظبة","السلوك"];
-// A student's overall score for classification. The report has an official
-// "النتيجة" (result) column — use it directly when present so the popup matches
-// the downloaded report exactly. Otherwise average the graded subjects.
-function studentAvg(s,term){
+// The official "المعدل" the school prints — the parser stores it on the النتيجة
+// column. Return it EXACTLY as recorded (no rounding) so the app matches the PDF.
+function resultAverage(s,term){
+  const g=s.grades[RESULT_SUBJECT]; if(!g) return null;
   const pc=primaryComp(term);
-  const res=getVal(s,RESULT_SUBJECT,pc,term);
-  if(res!=null) return res;
-  let sum=0,n=0;
+  const order=[[pc,term],["final","t2"],["final","t1"],["total","t2"],["total","t1"]];
+  for(const [ck,tm] of order){ const v=g[ck]&&g[ck][tm]; if(typeof v==="number") return v; }
+  for(const ck in g){ for(const tm in g[ck]){ if(typeof g[ck][tm]==="number") return g[ck][tm]; } }
+  return null;
+}
+// A student's overall score for classification = the official المعدل when present,
+// otherwise the average of the graded subjects (excluding summary/behavior columns).
+function studentAvg(s,term){
+  const off=resultAverage(s,term);
+  if(off!=null) return off;
+  const pc=primaryComp(term); let sum=0,n=0;
   DATA.subjects.forEach(su=>{
     if(NON_AVG_SUBJECTS.indexOf(su)!==-1) return;
     const v=getVal(s,su,pc,term); if(v!=null){sum+=v;n++;}
@@ -390,8 +398,9 @@ function drawMatrix(term){
       showMatrixNames(p[0], p[1], MATRIX[id], td); };
   });
 }
-// Trim a score to at most one decimal without a trailing ".0" (96.5 -> "96.5", 100 -> "100").
-function fmtScore(v){ return v==null? "" : String(+(+v).toFixed(1)); }
+// Show a score exactly as recorded, up to 2 decimals, no trailing zeros
+// (90.17 -> "90.17", 96.5 -> "96.5", 100 -> "100"). No rounding of real values.
+function fmtScore(v){ return v==null? "" : String(+(+v).toFixed(2)); }
 // Render a vertical, copy-friendly list of student names + their grade, with a copy button.
 // `items` may be plain name strings or {name, score} objects.
 function renderNames(box, title, items, color){
@@ -542,7 +551,7 @@ function drawTable(term){
   const tb=el("dataTable");
   let head=`<tr><th>#</th><th>${t("name")}</th>`+DATA.subjects.map(s=>`<th>${s}</th>`).join("")+`</tr>`;
   let body=DATA.students.map((s,i)=>`<tr><td>${i+1}</td><td>${s.name}</td>`+
-    DATA.subjects.map(su=>{const v=getVal(s,su,pc,term); return `<td>${v==null?"—":(+v).toFixed(0)}</td>`;}).join("")+
+    DATA.subjects.map(su=>{const v=getVal(s,su,pc,term); return `<td>${v==null?"—":fmtScore(v)}</td>`;}).join("")+
     `</tr>`).join("");
   tb.innerHTML=head+body;
 }
