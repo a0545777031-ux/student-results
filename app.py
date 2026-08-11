@@ -123,6 +123,10 @@ def init_db():
         con.execute("""CREATE TABLE IF NOT EXISTS user_settings(
             user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
             settings_json TEXT)""")
+        con.execute("""CREATE TABLE IF NOT EXISTS logins(
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            ts TEXT NOT NULL)""")
     else:
         con.raw.executescript("""
         CREATE TABLE IF NOT EXISTS users(
@@ -154,6 +158,12 @@ def init_db():
         CREATE TABLE IF NOT EXISTS user_settings(
             user_id INTEGER PRIMARY KEY,
             settings_json TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS logins(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            ts TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         """)
@@ -303,6 +313,15 @@ def api_login():
     if row["status"] == "rejected":
         return jsonify({"error": "rejected"}), 403
     session["uid"] = row["id"]
+    # record the login timestamp (skip admin) for the admin "recent logins" view
+    if row["role"] != "admin":
+        try:
+            con = db()
+            con.execute("INSERT INTO logins(user_id,ts) VALUES(?,?)",
+                        (row["id"], datetime.datetime.utcnow().isoformat()))
+            con.commit()
+        except Exception:
+            pass
     return jsonify({"ok": True, "role": row["role"]})
 
 @app.route("/api/logout", methods=["POST"])
@@ -407,6 +426,16 @@ def api_admin_user_uploads(uid):
     rows = db().execute("SELECT id,orig_name,filetype,n_students,created_at FROM uploads "
                         "WHERE user_id=? ORDER BY created_at DESC", (uid,)).fetchall()
     return jsonify([dict(r) for r in rows])
+
+@app.route("/api/admin/users/<int:uid>/logins")
+@admin_required
+def api_admin_user_logins(uid):
+    """Login timestamps for this user within the last 30 days (most recent first)."""
+    since = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).isoformat()
+    rows = db().execute(
+        "SELECT ts FROM logins WHERE user_id=? AND ts>=? ORDER BY ts DESC LIMIT 200",
+        (uid, since)).fetchall()
+    return jsonify([r["ts"] for r in rows])
 
 @app.route("/api/admin/users/create", methods=["POST"])
 @admin_required
